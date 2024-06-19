@@ -19,10 +19,5 @@ primary_region = 'ord'
     soft_limit = 200
     hard_limit = 250
 
-[[services.ports]]
-    handlers = ["http"]
-    port = 7181
-    force_https = false
-
 [[vm]]
   size = 'shared-cpu-1x'

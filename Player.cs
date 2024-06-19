@@ -6,6 +6,7 @@ namespace backend_server {
         public string username;
         public bool inGame;
 
+        [JsonProperty]
         int lives = 0;
         [JsonProperty]
         List<Item> items = new List<Item>();
@@ -13,6 +14,10 @@ namespace backend_server {
         public Player(string username, bool inGame = false) {
             this.username = username;
             this.inGame = inGame;
+
+            for (int i = 0; i < new Random().Next(1, 7); i++) {
+                items.Add(Item.CheckBullet);
+            }
         }
 
         public override bool Equals(object? obj) {
