@@ -37,6 +37,7 @@
 
     public record SetHostPacket : ServerPacket {
         public string packetType => "setHost";
+        public required Player host;
     }
 
     public record GetGameInfoResponsePacket : ServerPacket {

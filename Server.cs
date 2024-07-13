@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -59,6 +60,16 @@ namespace backend_server {
                 // Abormal disconnection, finally block has us covered
             } finally {
                 this.connectedClients.Remove(client);
+                // If they're the host, try to pass that status on to someone else
+                if (client.player == this.gameData.host) {
+                    if (this.gameData.players.Count > 0) {
+                        Player newHost = this.gameData.players[0];
+                        this.gameData.host = newHost;
+                        await broadcast(new SetHostPacket { host = newHost }); // TODO set host function
+                    } else {
+                        this.gameData.host = null;
+                    }
+                }
                 client.onDisconnect();
             }
         }
@@ -73,7 +84,7 @@ namespace backend_server {
                         bool usernameTaken = this.gameData.players.Any(player => player.username == joinGamePacket.username);
                         await Console.Out.WriteLineAsync($"Username taken for \"{joinGamePacket.username}\": {usernameTaken}");
                         if (!usernameTaken) {
-                            sender.player = new Player(joinGamePacket.username, true);
+                            sender.player = new Player(joinGamePacket.username);
                             this.gameData.players.Add(sender.player);
                         // If it's not, check if the username is still logged in. If so, error, if not, assume it's the player logging back in
                         } else {
@@ -87,14 +98,19 @@ namespace backend_server {
                             }
                         }
 
-                        // Failure triggers a return which skips over this code
+                        // Either the client is new, or they're taking an existing player object
+                        // Either way, we're good to go at this point
+                        sender.player.inGame = true;
+
                         await broadcast(new PlayerJoinedPacket { player = sender.player });
                         // If they're the first player, mark them as the host
-                        int joinedPlayersCount = this.gameData.players.Count(player => player.inGame);
-                        if (joinedPlayersCount == 0) {
-                            await sender.sendMessage(new SetHostPacket());
-                            this.gameData.gameHost = sender.player;
+                        if (this.gameData.players.Count == 1) {
+                            // TODO make SetHostPacket send a chat message
+                            await broadcast(new SetHostPacket { host = sender.player });
+                            this.gameData.host = sender.player;
                         }
+
+                        sender.player.inGame = true;
 
                         break;
                     default:
@@ -106,9 +122,8 @@ namespace backend_server {
                         ChatMessage message = this.gameData.chat.addMessage(sender.player, sendNewChatMessagePacket.content);
                         await broadcast(new NewChatMessageSentPacket { message = message });
                         break;
-                    // TODO sometimes doesn't contain chat messages???
                     case GetGameInfoPacket getGameInfoPacket:
-                        await sender.sendMessage(new GetGameInfoResponsePacket { currentHost = this.gameData.gameHost, players = this.gameData.players, chatMessages = this.gameData.chat.getMessages(), turnCount = this.gameData.turnCount });
+                        await sender.sendMessage(new GetGameInfoResponsePacket { currentHost = this.gameData.host, players = this.gameData.players, chatMessages = this.gameData.chat.getMessages(), turnCount = this.gameData.turnCount });
                         break;
                         /*
                     case FireGunPacket fireGunPacket:
