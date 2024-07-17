@@ -1,4 +1,4 @@
-﻿namespace backend_server {
+﻿namespace liveorlive_server {
     public interface Packet {
         public string packetType { get; }
     }

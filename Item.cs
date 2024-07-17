@@ -2,7 +2,7 @@
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace backend_server {
+namespace liveorlive_server {
     [JsonConverter(typeof(StringEnumConverter))]
     public enum Item {
         DoubleDamage,

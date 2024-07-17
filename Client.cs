@@ -3,7 +3,7 @@ using System.Net.WebSockets;
 using System.Reflection;
 using System.Text;
 
-namespace backend_server {
+namespace liveorlive_server {
     public class Client {
         public readonly WebSocket webSocket;
         public readonly Server server;

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace backend_server {
+namespace liveorlive_server {
     public class GameData {
         public List<Player> players = [];
         public Player? host = null;

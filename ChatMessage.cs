@@ -1,4 +1,4 @@
-﻿namespace backend_server {
+﻿namespace liveorlive_server {
     public class ChatMessage {
         public readonly Player author;
         public readonly string message;

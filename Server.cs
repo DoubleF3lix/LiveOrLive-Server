@@ -5,7 +5,7 @@ using System.Text;
 using Newtonsoft.Json;
 
 
-namespace backend_server {
+namespace liveorlive_server {
     public class Server {
         WebApplication app;
 
@@ -94,7 +94,6 @@ namespace backend_server {
                                 return;
                             } else {
                                 sender.player = takenPlayer;
-                                // TODO player leave packet
                             }
                         }
 

@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace backend_server {
+namespace liveorlive_server {
     public class PacketJSONConverter : JsonConverter<ClientPacket> {
         /*
         private Player dataToPlayer(JObject data, string nullConditionField) {

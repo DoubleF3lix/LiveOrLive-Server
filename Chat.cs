@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace backend_server {
+namespace liveorlive_server {
     public class Chat {
         [JsonProperty]
         List<ChatMessage> messages = new List<ChatMessage>();

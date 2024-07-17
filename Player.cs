@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace backend_server {
+namespace liveorlive_server {
     // Internal server representation of player data
     public class Player {
         public string username;
@@ -9,13 +9,13 @@ namespace backend_server {
         [JsonProperty]
         int lives = 0;
         [JsonProperty]
-        List<Item> items = new List<Item>();
+        List<Item> items = new List<Item>(); // Max of 4 items
 
         public Player(string username, bool inGame = false) {
             this.username = username;
             this.inGame = inGame;
 
-            for (int i = 0; i < new Random().Next(1, 7); i++) {
+            for (int i = 0; i < new Random().Next(1, 4+1); i++) {
                 items.Add(Item.CheckBullet);
             }
         }

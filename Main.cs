@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-
-namespace backend_server {
+﻿namespace liveorlive_server {
     public class Program {
         public static async Task Main(string[] args) {
             Server server = new Server();
