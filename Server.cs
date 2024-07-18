@@ -156,7 +156,9 @@ namespace liveorlive_server {
 
         public async Task broadcast(ServerPacket packet) {
             foreach (Client client in this.connectedClients) {
-                await client.sendMessage(packet);
+                if (client.player?.inGame ?? false) {
+                    await client.sendMessage(packet);
+                }
             }
         }
     }
