@@ -79,8 +79,13 @@ namespace liveorlive_server {
             if (sender.player == null) {
                 switch (packet) {
                     case JoinGamePacket joinGamePacket:
+                        // Check max length
+                        if (joinGamePacket.username.Length > 20) {
+                            await sender.sendMessage( new PlayerJoinRejectedPacket { reason = "That username is too long. Please choose another." });
+                            return;
+                        }
+
                         // Check if the username was available
-                        // TODO this broke (can log in as same username twice)
                         bool usernameTaken = this.gameData.players.Any(player => player.username == joinGamePacket.username);
                         await Console.Out.WriteLineAsync($"Username taken for \"{joinGamePacket.username}\": {usernameTaken}");
                         if (!usernameTaken) {
