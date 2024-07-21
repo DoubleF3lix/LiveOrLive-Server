@@ -23,6 +23,8 @@ namespace liveorlive_server {
                     return new JoinGamePacket() { username = (string)data["username"] };
                 case "getGameInfo":
                     return new GetGameInfoPacket();
+                case "startGame":
+                    return new StartGamePacket();
                     /*
                 case "fireGun":
                     return new FireGunPacket() { target = this.dataToPlayer(data, null) };

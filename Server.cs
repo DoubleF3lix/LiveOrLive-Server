@@ -76,6 +76,7 @@ namespace liveorlive_server {
 
         public async Task packetReceived(Client sender, ClientPacket packet) {
             await Console.Out.WriteLineAsync($"Received packet from {sender.ToString()}: {packet}");
+            // Before the player is in the game but after they're connected
             if (sender.player == null) {
                 switch (packet) {
                     case JoinGamePacket joinGamePacket:
@@ -129,7 +130,7 @@ namespace liveorlive_server {
                     case GetGameInfoPacket getGameInfoPacket:
                         await sender.sendMessage(new GetGameInfoResponsePacket { currentHost = this.gameData.host, players = this.gameData.players, chatMessages = this.gameData.chat.getMessages(), turnCount = this.gameData.turnCount });
                         break;
-                        /*
+                    /*
                     case FireGunPacket fireGunPacket:
                         // Check the player can make a move
                         if (fromPlayer != this.players[this.turnCount % this.players.Count() - 1]) {
@@ -141,13 +142,17 @@ namespace liveorlive_server {
 
                         }
                         break;
+                    */
                     case StartGamePacket startGamePacket:
                         // Host only packet
-                        if (fromPlayer == this.gameHost) {
-                            // TODO
+                        if (sender.player == this.gameData.host) {
+                            await broadcast(new GameStartedPacket());
+                            foreach (Player player in this.gameData.players) {
+                                player.setItems(gameData.itemDeck.getSetForPlayer());
+                            }
                         }
                         break;
-                        */
+                        
                     default:
                         throw new Exception("Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
                 }

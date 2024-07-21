@@ -1,15 +1,15 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 
 namespace liveorlive_server {
     [JsonConverter(typeof(StringEnumConverter))]
     public enum Item {
+        SkipPlayerTurn,
         DoubleDamage,
         CheckBullet,
-        SkipPlayerTurn,
+        Rebalancer,
         ShootAir,
-        RerollCounts,
+        StealItem,
         AddLife
     }
 }

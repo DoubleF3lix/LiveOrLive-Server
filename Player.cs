@@ -7,17 +7,17 @@ namespace liveorlive_server {
         public bool inGame;
 
         [JsonProperty]
-        int lives = 0;
+        int lives = 5;
         [JsonProperty]
         List<Item> items = new List<Item>(); // Max of 4 items
 
         public Player(string username, bool inGame = false) {
             this.username = username;
-            this.inGame = inGame;
+            this.inGame = inGame; // This is necessary since player objects persist after their associated client disconnects
+        }
 
-            for (int i = 0; i < new Random().Next(1, 4+1); i++) {
-                items.Add(Item.CheckBullet);
-            }
+        public void setItems(List<Item> items) {
+            this.items = items;
         }
 
         public override bool Equals(object? obj) {
