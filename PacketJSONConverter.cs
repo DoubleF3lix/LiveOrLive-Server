@@ -17,26 +17,40 @@ namespace liveorlive_server {
             // We don't need to bother parsing server packets, because they come from the server
             // That happens on the client (TypeScript) side
             switch (action) {
-                case "sendNewChatMessage":
-                    return new SendNewChatMessagePacket() { content = (string)data["content"] };
                 case "joinGame":
                     return new JoinGamePacket() { username = (string)data["username"] };
-                case "getGameInfo":
-                    return new GetGameInfoPacket();
+                case "setHost":
+                    return new SetHostPacket() { username = (string)data["username"] };
+                case "gameDataRequest":
+                    return new GameDataRequestPacket();
                 case "startGame":
                     return new StartGamePacket();
-                    /*
-                case "fireGun":
-                    return new FireGunPacket() { target = this.dataToPlayer(data, null) };
-                case "useItem":
+                case "shootPlayer":
+                    return new ShootPlayerPacket() { target = (string)data["target"] };
+                case "useSkipItem":
+                    return new UseSkipItemPacket() { target = (string)data["target"] };
+                case "useDoubleDamageItem":
+                    return new UseDoubleDamageItemPacket();
+                case "useChamberCheckItem":
+                    return new UseDoubleDamageItemPacket();
+                case "useRebalancerItem":
+                    AmmoType ammoType;
+                    bool success = Enum.TryParse((string)data["ammoType"], true, out ammoType);
+                    if (!success) {
+                        throw new JsonSerializationException($"Invalid ammo type for useRebalancerItem packet: {data["ammoType"]}");
+                    }
+                    return new UseRebalancerItemPacket() { ammoType = ammoType };
+                case "useQuickshotItem":
+                    return new UseQuickshotItemPacket();
+                case "useStealItem":
                     Item item;
-                    // We do this since if it fails to cast, it will default to 0 (double damage)
-                    bool success = Enum.TryParse((string)data["item"], true, out item);
+                    success = Enum.TryParse((string)data["item"], true, out item);
                     if (!success) {
                         throw new JsonSerializationException($"Invalid item ID for useItem packet: {data["itemID"]}");
                     }
-                    return new UseItemPacket() { item = item, target = this.dataToPlayer(data, "target") };
-                    */
+                    return new UseStealItemPacket() { item = item, target = (string)data["username"] };
+                case "sendNewChatMessage":
+                    return new SendNewChatMessagePacket() { content = (string)data["content"] };
                 default:
                     throw new JsonSerializationException($"Invalid packet type (action not valid): {data.ToString()}");
             }

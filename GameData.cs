@@ -1,16 +1,23 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 
 namespace liveorlive_server {
     public class GameData {
         public List<Player> players = [];
-        public Player? host = null;
-        public Chat chat = new Chat();
+        public string? host = null;
 
+        [JsonIgnore]
+        public List<string> turnOrder = []; // Usernames
+        public int turnCount = -1;
+        [JsonIgnore]
+        public bool gameStarted = false;
+        [JsonIgnore]
         public ItemDeck itemDeck;
 
-        // -1 means game hasn't started
-        public int turnCount = -1;
+        private List<AmmoType> ammoDeck = [];
 
+        [JsonIgnore]
+        public Chat chat = new Chat();
         public readonly string gameID = Guid.NewGuid().ToString();
 
         public GameData() {

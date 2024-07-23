@@ -8,26 +8,9 @@
     public interface ClientPacket : Packet { }
 
     // Server packets
-    public record UpdatePlayerDataPacket : ServerPacket {
-        public string packetType => "updatePlayerData";
-        public required Player player;
-        public List<Item>? items;
-        public int? lives;
-    }
-
-    public record ShowAlertPacket : ServerPacket {
-        public string packetType => "showAlert";
-        public required string content;
-    }
-
-    public record NewChatMessageSentPacket : ServerPacket {
-        public string packetType => "newChatMessageSent";
-        public required ChatMessage message;
-    }
-
-    public record PlayerJoinRejectedPacket : ServerPacket {
-        public string packetType => "playerJoinRejected";
-        public required string reason;
+    public record GameDataSyncPacket : ServerPacket {
+        public string packetType => "gameDataSync";
+        public required GameData gameData;
     }
 
     public record PlayerJoinedPacket : ServerPacket {
@@ -35,61 +18,104 @@
         public required Player player;
     }
 
-    public record SetHostPacket : ServerPacket {
-        public string packetType => "setHost";
-        public required Player host;
+    public record PlayerJoinRejectedPacket : ServerPacket {
+        public string packetType => "playerJoinRejected";
+        public required string reason;
     }
 
-    public record GetGameInfoResponsePacket : ServerPacket {
-        public string packetType => "getGameInfoResponse";
-        public required Player currentHost;
-        public required List<Player> players;
-        public required List<ChatMessage> chatMessages;
-        public required int turnCount;
-    }
-
-    public record GunFiredPacket : ServerPacket {
-        public string packetType => "gunFired";
-        public required Player target;
-    }
-
-    public record ItemUsedPacket : ServerPacket {
-        public string packetType => "itemUsed";
-        public required Item itemID;
-        public Player? target;
+    public record HostSetPacket : ServerPacket {
+        public string packetType => "hostSet";
+        public required string username;
     }
 
     public record GameStartedPacket : ServerPacket {
         public string packetType => "gameStarted";
     }
 
-    // Client packets
-    public record SendNewChatMessagePacket : ClientPacket {
-        public string packetType => "sendNewChatMessage";
+    public record TurnStartedPacket : ServerPacket {
+        public string packetType => "turnStarted";
+        public required string username;
+    }
+
+    public record TurnEndedPacket : ServerPacket {
+        public string packetType => "turnEnded";
+        public required string username;
+    }
+
+    public record ActionFailedPacket : ServerPacket {
+        public string packetType => "actionFailed";
+        public required string reason;
+    }
+
+    public record UseChamberCheckItemResultPacket : ServerPacket {
+        public string packetType => "useChamberCheckItemResult";
+        public required AmmoType ammoType;
+    }
+
+    public record NewChatMessageSentPacket : ServerPacket {
+        public string packetType => "newChatMessageSent";
+        public required ChatMessage message;
+    }
+
+    public record ShowAlertPacket : ServerPacket {
+        public string packetType => "showAlert";
         public required string content;
     }
 
+    // Client packets
     public record JoinGamePacket : ClientPacket {
         public string packetType => "joinGame";
         public required string username;
     }
 
-    public record GetGameInfoPacket : ClientPacket {
-        public string packetType => "getGameInfo";
+    public record SetHostPacket : ClientPacket {
+        public string packetType => "setHost";
+        public required string username;
     }
 
-    public record FireGunPacket : ClientPacket {
-        public string packetType => "fireGun";
-        public required Player target;
-    }
-
-    public record UseItemPacket : ClientPacket {
-        public string packetType => "useItem";
-        public required Item item;
-        public Player? target;
+    public record GameDataRequestPacket : ClientPacket {
+        public string packetType => "gameDataRequest";
     }
 
     public record StartGamePacket : ClientPacket {
         public string packetType => "startGame";
+    }
+
+    public record ShootPlayerPacket : ClientPacket {
+        public string packetType => "shootPlayer";
+        public required string target;
+    }
+
+    public record UseSkipItemPacket : ClientPacket {
+        public string packetType => "useSkipItem";
+        public required string target;
+    }
+
+    public record UseDoubleDamageItemPacket : ClientPacket {
+        public string packetType => "useDoubleDamageItem";
+    }
+
+    public record UseChamberCheckItemPacket : ClientPacket {
+        public string packetType => "useChamberCheckItem";
+    }
+
+    public record UseRebalancerItemPacket : ClientPacket {
+        public string packetType => "useRebalancerItem";
+        public required AmmoType ammoType;
+    }
+
+    public record UseQuickshotItemPacket : ClientPacket {
+        public string packetType => "useQuickshotItem";
+    }
+
+    public record UseStealItemPacket : ClientPacket {
+        public string packetType => "useStealItem";
+        public required string target;
+        public required Item item;
+    }
+
+    public record SendNewChatMessagePacket : ClientPacket {
+        public string packetType => "sendNewChatMessage";
+        public required string content;
     }
 }
