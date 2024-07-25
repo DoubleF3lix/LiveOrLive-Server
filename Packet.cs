@@ -57,6 +57,11 @@
         public required ChatMessage message;
     }
 
+    public record ChatMessagesSyncPacket : ServerPacket {
+        public string packetType => "chatMessagesSync";
+        public required List<ChatMessage> messages;
+    }
+
     public record ShowAlertPacket : ServerPacket {
         public string packetType => "showAlert";
         public required string content;
@@ -117,5 +122,9 @@
     public record SendNewChatMessagePacket : ClientPacket {
         public string packetType => "sendNewChatMessage";
         public required string content;
+    }
+
+    public record ChatMessagesRequestPacket : ClientPacket {
+        public string packetType => "chatMessagesRequest";
     }
 }

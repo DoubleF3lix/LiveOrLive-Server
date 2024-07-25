@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.WebSockets;
-using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -11,12 +10,13 @@ namespace liveorlive_server {
 
         List<Client> connectedClients = new List<Client>();
         GameData gameData = new GameData();
+        public Chat chat = new Chat();
 
         public Server() {
             this.app = WebApplication.CreateBuilder().Build();
             this.app.UseWebSockets();
             
-            // app.MapGet("/", () => new Microsoft.AspNetCore.Mvc.JsonResult("works"));
+            // app.MapGet("/", () => new Microsoft.AspNetCore.Mvc.JsonResult("Test complete, can connect"));
 
             this.app.MapGet("/", async context => {
                 // Make sure all incoming requests are WebSocket requests, otherwise send 400
@@ -61,15 +61,15 @@ namespace liveorlive_server {
             } finally {
                 this.connectedClients.Remove(client);
                 // If they're the host, try to pass that status on to someone else
-                if (client.player == this.gameData.host) {
-                    if (this.gameData.players.Count > 0) {
-                        Player newHost = this.gameData.players[0];
-                        this.gameData.host = newHost;
-                        await broadcast(new SetHostPacket { host = newHost }); // TODO set host function
-                    } else {
-                        this.gameData.host = null;
-                    }
-                }
+                //if (client.player.username == this.gameData.host) {
+                //    if (this.gameData.players.Count > 0) {
+                //        Player newHost = this.gameData.players[0];
+                //        this.gameData.host = newHost.username;
+                //        await broadcast(new SetHostPacket { host = newHost }); // TODO set host function
+                //    } else {
+                //        this.gameData.host = null;
+                //    }
+                //}
                 client.onDisconnect();
             }
         }
@@ -83,6 +83,9 @@ namespace liveorlive_server {
                         // Check max length
                         if (joinGamePacket.username.Length > 20) {
                             await sender.sendMessage( new PlayerJoinRejectedPacket { reason = "That username is too long. Please choose another." });
+                            return;
+                        } else if (joinGamePacket.username.Length < 3) {
+                            await sender.sendMessage(new PlayerJoinRejectedPacket { reason = "That username is too short. Please choose another." });
                             return;
                         }
 
@@ -109,11 +112,11 @@ namespace liveorlive_server {
 
                         await broadcast(new PlayerJoinedPacket { player = sender.player });
                         // If they're the first player, mark them as the host
-                        if (this.gameData.players.Count == 1) {
-                            // TODO make SetHostPacket send a chat message
-                            await broadcast(new SetHostPacket { host = sender.player });
-                            this.gameData.host = sender.player;
-                        }
+                        //if (this.gameData.players.Count == 1) {
+                        //    // TODO make SetHostPacket send a chat message
+                        //    await broadcast(new SetHostPacket { host = sender.player });
+                        //    this.gameData.host = sender.player;
+                        //}
 
                         sender.player.inGame = true;
 
@@ -124,11 +127,14 @@ namespace liveorlive_server {
             } else {
                 switch (packet) {
                     case SendNewChatMessagePacket sendNewChatMessagePacket:
-                        ChatMessage message = this.gameData.chat.addMessage(sender.player, sendNewChatMessagePacket.content);
+                        ChatMessage message = this.chat.addMessage(sender.player, sendNewChatMessagePacket.content);
                         await broadcast(new NewChatMessageSentPacket { message = message });
                         break;
-                    case GetGameInfoPacket getGameInfoPacket:
-                        await sender.sendMessage(new GetGameInfoResponsePacket { currentHost = this.gameData.host, players = this.gameData.players, chatMessages = this.gameData.chat.getMessages(), turnCount = this.gameData.turnCount });
+                    case ChatMessagesRequestPacket getChatMessagesPacket:
+                        await sender.sendMessage(new ChatMessagesSyncPacket { messages = this.chat.getMessages() });
+                        break;
+                    case GameDataRequestPacket gameInfoRequestPacket:
+                        await sender.sendMessage(new GameDataSyncPacket { gameData = this.gameData });
                         break;
                     /*
                     case FireGunPacket fireGunPacket:
@@ -145,11 +151,11 @@ namespace liveorlive_server {
                     */
                     case StartGamePacket startGamePacket:
                         // Host only packet
-                        if (sender.player == this.gameData.host) {
+                        if (sender.player.username == this.gameData.host) {
                             await broadcast(new GameStartedPacket());
-                            foreach (Player player in this.gameData.players) {
-                                player.setItems(gameData.itemDeck.getSetForPlayer());
-                            }
+                            //foreach (Player player in this.gameData.players) {
+                            //    player.setItems(this.gameData.itemDeck.getSetForPlayer());
+                            //}
                         }
                         break;
                         

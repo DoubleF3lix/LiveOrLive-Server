@@ -51,6 +51,8 @@ namespace liveorlive_server {
                     return new UseStealItemPacket() { item = item, target = (string)data["username"] };
                 case "sendNewChatMessage":
                     return new SendNewChatMessagePacket() { content = (string)data["content"] };
+                case "chatMessagesRequest":
+                    return new ChatMessagesRequestPacket();
                 default:
                     throw new JsonSerializationException($"Invalid packet type (action not valid): {data.ToString()}");
             }
