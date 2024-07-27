@@ -118,8 +118,6 @@ namespace liveorlive_server {
                             this.gameData.host = sender.player.username;
                         }
 
-                        sender.player.inGame = true;
-
                         break;
                     default:
                         throw new Exception($"Invalid packet type (without player instance) of \"{packet.packetType}\". Did you forget to implement this?");
@@ -136,19 +134,6 @@ namespace liveorlive_server {
                     case GameDataRequestPacket gameInfoRequestPacket:
                         await sender.sendMessage(new GameDataSyncPacket { gameData = this.gameData });
                         break;
-                    /*
-                    case FireGunPacket fireGunPacket:
-                        // Check the player can make a move
-                        if (fromPlayer != this.players[this.turnCount % this.players.Count() - 1]) {
-
-                        }
-                        break;
-                    case UseItemPacket useItemPacket:
-                        if (fromPlayer != this.players[this.turnCount % this.players.Count() - 1]) {
-
-                        }
-                        break;
-                    */
                     case StartGamePacket startGamePacket:
                         // Host only packet
                         if (sender.player.username == this.gameData.host) {
