@@ -61,15 +61,15 @@ namespace liveorlive_server {
             } finally {
                 this.connectedClients.Remove(client);
                 // If they're the host, try to pass that status on to someone else
-                //if (client.player.username == this.gameData.host) {
-                //    if (this.gameData.players.Count > 0) {
-                //        Player newHost = this.gameData.players[0];
-                //        this.gameData.host = newHost.username;
-                //        await broadcast(new SetHostPacket { host = newHost }); // TODO set host function
-                //    } else {
-                //        this.gameData.host = null;
-                //    }
-                //}
+                if (client.player.username == this.gameData.host) {
+                    if (this.connectedClients.Count(client => client.player != null) > 0) {
+                        Player newHost = this.connectedClients[0].player;
+                        this.gameData.host = newHost.username;
+                        await broadcast(new HostSetPacket { username = this.gameData.host }); // TODO set host function
+                    } else {
+                        this.gameData.host = null;
+                    }
+                }
                 client.onDisconnect();
             }
         }
@@ -112,11 +112,11 @@ namespace liveorlive_server {
 
                         await broadcast(new PlayerJoinedPacket { player = sender.player });
                         // If they're the first player, mark them as the host
-                        //if (this.gameData.players.Count == 1) {
-                        //    // TODO make SetHostPacket send a chat message
-                        //    await broadcast(new SetHostPacket { host = sender.player });
-                        //    this.gameData.host = sender.player;
-                        //}
+                        if (this.gameData.players.Count == 1) {
+                            // TODO make SetHostPacket send a chat message
+                            await broadcast(new HostSetPacket { username = sender.player.username });
+                            this.gameData.host = sender.player.username;
+                        }
 
                         sender.player.inGame = true;
 

@@ -16,7 +16,7 @@
         }
 
         public void startGame() {
-            
+            this.newRound();
         }
 
         public void newRound() {
