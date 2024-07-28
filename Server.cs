@@ -138,7 +138,11 @@ namespace liveorlive_server {
                     case StartGamePacket startGamePacket:
                         // Host only packet
                         if (sender.player.username == this.gameData.host) {
-                            await this.startGame();
+                            if (this.connectedClients.Count < 2) {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "There needs to be at least 2 players to start a game" });
+                            } else {
+                                await this.startGame();
+                            }
                         }
                         break;
                         
