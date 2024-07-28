@@ -32,6 +32,13 @@
         public string packetType => "gameStarted";
     }
 
+    public record NewRoundStartedPacket : ServerPacket {
+        public string packetType => "newRoundStarted";
+        public required List<Player> players;
+        public required int liveCount;
+        public required int blankCount;
+    }
+
     public record TurnStartedPacket : ServerPacket {
         public string packetType => "turnStarted";
         public required string username;

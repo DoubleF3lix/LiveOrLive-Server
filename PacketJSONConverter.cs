@@ -32,7 +32,7 @@ namespace liveorlive_server {
                 case "useDoubleDamageItem":
                     return new UseDoubleDamageItemPacket();
                 case "useChamberCheckItem":
-                    return new UseDoubleDamageItemPacket();
+                    return new UseChamberCheckItemPacket();
                 case "useRebalancerItem":
                     AmmoType ammoType;
                     bool success = Enum.TryParse((string)data["ammoType"], true, out ammoType);

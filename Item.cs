@@ -8,8 +8,9 @@ namespace liveorlive_server {
         DoubleDamage,
         CheckBullet,
         Rebalancer,
-        Quickshot,
+        Adrenaline,
         StealItem,
-        AddLife
+        AddLife,
+        Quickshot
     }
 }

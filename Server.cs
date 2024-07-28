@@ -61,7 +61,8 @@ namespace liveorlive_server {
             } finally {
                 this.connectedClients.Remove(client);
                 // If they're the host, try to pass that status on to someone else
-                if (client.player.username == this.gameData.host) {
+                // If they don't have a player assigned, don't bother
+                if (client.player?.username == this.gameData.host) {
                     if (this.connectedClients.Count(client => client.player != null) > 0) {
                         Player newHost = this.connectedClients[0].player;
                         this.gameData.host = newHost.username;
@@ -132,15 +133,12 @@ namespace liveorlive_server {
                         await sender.sendMessage(new ChatMessagesSyncPacket { messages = this.chat.getMessages() });
                         break;
                     case GameDataRequestPacket gameInfoRequestPacket:
-                        await sender.sendMessage(new GameDataSyncPacket { gameData = this.gameData });
+                        await this.syncGameData();
                         break;
                     case StartGamePacket startGamePacket:
                         // Host only packet
                         if (sender.player.username == this.gameData.host) {
-                            await broadcast(new GameStartedPacket());
-                            //foreach (Player player in this.gameData.players) {
-                            //    player.setItems(this.gameData.itemDeck.getSetForPlayer());
-                            //}
+                            await this.startGame();
                         }
                         break;
                         
@@ -148,6 +146,35 @@ namespace liveorlive_server {
                         throw new Exception("Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
                 }
             }
+        }
+
+        public async Task startGame() {
+            // Gives items, trigger refresh
+            this.gameData.startGame();
+            await broadcast(new GameStartedPacket());
+
+            await this.startNewRound();
+        }
+
+        public async Task startNewRound() {
+            List<int> ammoCounts = this.gameData.newRound();
+            await broadcast(new NewRoundStartedPacket { 
+                players = this.gameData.players, 
+                liveCount = ammoCounts[0],
+                blankCount = ammoCounts[1] 
+            });
+        }
+
+        public Client getClientForCurrentTurn() {
+            Player currentPlayer = this.gameData.getCurrentPlayerForTurn();
+            Client currentClient = this.connectedClients.Find(client => client.player == currentPlayer);
+            // TODO make player shoot themselves if client is null (they disconnected)
+            // make sure to check player is not spectator
+            return currentClient;
+        }
+
+        public async Task syncGameData() {
+            await broadcast(new GameDataSyncPacket { gameData = this.gameData });
         }
 
         public async Task broadcast(ServerPacket packet) {
