@@ -40,5 +40,9 @@
         public Player getCurrentPlayerForTurn() {
             return this.getPlayerByUsername(this.turnOrder[this.turnCount - 1]);
         }
+
+        public List<Player> getActivePlayers() {
+            return this.players.Where(player => player.inGame == true && player.isSpectator == false).ToList();
+        }
     }
 }

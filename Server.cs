@@ -113,7 +113,7 @@ namespace liveorlive_server {
 
                         await broadcast(new PlayerJoinedPacket { player = sender.player });
                         // If they're the first player, mark them as the host
-                        if (this.gameData.players.Count == 1) {
+                        if (this.gameData.getActivePlayers().Count == 1) {
                             // TODO make SetHostPacket send a chat message
                             await broadcast(new HostSetPacket { username = sender.player.username });
                             this.gameData.host = sender.player.username;
@@ -138,10 +138,10 @@ namespace liveorlive_server {
                     case StartGamePacket startGamePacket:
                         // Host only packet
                         if (sender.player.username == this.gameData.host) {
-                            if (this.connectedClients.Count < 2) {
-                                await sender.sendMessage(new ActionFailedPacket { reason = "There needs to be at least 2 players to start a game" });
-                            } else {
+                            if (this.connectedClients.Count >= 2 && this.gameData.getActivePlayers().Count >= 2) {
                                 await this.startGame();
+                            } else {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "There needs to be at least 2 players to start a game" });
                             }
                         }
                         break;
