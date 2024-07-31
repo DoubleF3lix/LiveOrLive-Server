@@ -167,6 +167,19 @@ namespace liveorlive_server {
                 liveCount = ammoCounts[0],
                 blankCount = ammoCounts[1] 
             });
+
+            await this.nextTurn();
+        }
+
+        public async Task nextTurn() {
+            Player playerForTurn = this.gameData.startNewTurn();
+            await broadcast(new TurnStartedPacket { username = playerForTurn.username });
+
+            if (playerForTurn.inGame == false) {
+                // TODO make them shoot themselves
+                //await broadcast(new PlayerShotPacket { target = playerForTurn.username });
+                //await broadcast(new TurnEndedPacket { username = playerForTurn.username });
+            }
         }
 
         public Client getClientForCurrentTurn() {

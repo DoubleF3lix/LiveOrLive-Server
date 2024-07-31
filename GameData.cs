@@ -3,6 +3,7 @@
         public List<Player> players = [];
         public string? host = null;
         public bool gameStarted = false;
+        public string? currentTurn = null;
         public readonly string gameID = Guid.NewGuid().ToString();
 
         private List<string> turnOrder = []; // Usernames
@@ -18,7 +19,7 @@
 
         public void startGame() {
             this.turnOrder = this.players.Where(player => player.inGame == true).Select(player => player.username).ToList();
-            this.turnCount = 1;
+            this.turnCount = 0;
             this.gameStarted = true;
         }
 
@@ -30,19 +31,27 @@
             }
 
             this.ammoDeck.refresh();
+
             return new List<int> { this.ammoDeck.liveCount, this.ammoDeck.blankCount };
         }
 
-        private Player getPlayerByUsername(string username) {
-            return this.players.Find(player => player.username == username);
+        public Player startNewTurn() {
+            this.turnCount++;
+            Player playerForTurn = this.getCurrentPlayerForTurn();
+            this.currentTurn = playerForTurn.username;
+            return playerForTurn;
         }
 
         public Player getCurrentPlayerForTurn() {
-            return this.getPlayerByUsername(this.turnOrder[this.turnCount - 1]);
+            return this.getPlayerByUsername(this.turnOrder[this.turnCount - 1 % this.turnOrder.Count]);
         }
 
         public List<Player> getActivePlayers() {
             return this.players.Where(player => player.inGame == true && player.isSpectator == false).ToList();
+        }
+
+        private Player getPlayerByUsername(string username) {
+            return this.players.Find(player => player.username == username);
         }
     }
 }
