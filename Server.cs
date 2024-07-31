@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Newtonsoft.Json;
 
 
@@ -94,7 +96,7 @@ namespace liveorlive_server {
                         bool usernameTaken = this.gameData.players.Any(player => player.username == joinGamePacket.username);
                         await Console.Out.WriteLineAsync($"Username taken for \"{joinGamePacket.username}\": {usernameTaken}");
                         if (!usernameTaken) {
-                            sender.player = new Player(joinGamePacket.username);
+                            sender.player = new Player(joinGamePacket.username, false, this.gameData.gameStarted);
                             this.gameData.players.Add(sender.player);
                         // If it's not, check if the username is still logged in. If so, error, if not, assume it's the player logging back in
                         } else {
@@ -145,7 +147,12 @@ namespace liveorlive_server {
                             }
                         }
                         break;
-                        
+                    case ShootPlayerPacket shootPlayerPacket:
+                        // Make sure it's the players turn
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            await this.nextTurn();
+                        }
+                        break;
                     default:
                         throw new Exception("Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
                 }
@@ -172,17 +179,21 @@ namespace liveorlive_server {
         }
 
         public async Task nextTurn() {
+            // Send the turn end packet for the previous player (if there was one) automaticaly
+            if (this.gameData.currentTurn != null) { 
+                await broadcast(new TurnEndedPacket { username = this.gameData.currentTurn }); 
+            }
+            
             Player playerForTurn = this.gameData.startNewTurn();
             await broadcast(new TurnStartedPacket { username = playerForTurn.username });
 
             if (playerForTurn.inGame == false) {
-                // TODO make them shoot themselves
-                //await broadcast(new PlayerShotPacket { target = playerForTurn.username });
-                //await broadcast(new TurnEndedPacket { username = playerForTurn.username });
+                // await broadcast(new PlayerShot { target = playerForTurn.username });
+                await this.nextTurn();
             }
         }
 
-        public Client getClientForCurrentTurn() {
+        public Client? getClientForCurrentTurn() {
             Player currentPlayer = this.gameData.getCurrentPlayerForTurn();
             Client currentClient = this.connectedClients.Find(client => client.player == currentPlayer);
             // TODO make player shoot themselves if client is null (they disconnected)

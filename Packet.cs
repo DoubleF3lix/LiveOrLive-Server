@@ -54,9 +54,44 @@
         public required string reason;
     }
 
-    public record UseChamberCheckItemResultPacket : ServerPacket {
-        public string packetType => "useChamberCheckItemResult";
+    public record PlayerShotPacket : ServerPacket {
+        public string packetType => "playerShot";
+        public required string target;
+    }
+
+    public record SkipItemUsedPacket : ServerPacket {
+        public string packetType => "skipItemUsed";
+        public required string target;
+    }
+
+    public record DoubleDamageItemUsedPacket : ServerPacket {
+        public string packetType => "doubleDamageItemUsed";
+    }
+
+    public record ChamberCheckItemUsedPacket : ServerPacket {
+        public string packetType => "chamberCheckItemUsed";
+        public required AmmoType result;
+    }
+
+    public record RebalancerItemUsedPacket : ServerPacket {
+        public string packetType => "rebalancerItemUsed";
         public required AmmoType ammoType;
+        public required int count;
+    }
+
+    public record AdrenalineItemUsedPacket : ServerPacket {
+        public string packetType => "adrenalineItemUsed";
+        public required int result;
+    }
+
+    public record QuickshotItemUsedPacket : ServerPacket {
+        public string packetType => "quickshotItemUsed";
+    }
+
+    public record StealItemUsedPacket : ServerPacket {
+        public string packetType => "stealItemUsed";
+        public required string target;
+        public required Item item;
     }
 
     public record NewChatMessageSentPacket : ServerPacket {
@@ -114,6 +149,10 @@
     public record UseRebalancerItemPacket : ClientPacket {
         public string packetType => "useRebalancerItem";
         public required AmmoType ammoType;
+    }
+
+    public record UseAdrenalineItemPacket : ClientPacket {
+        public string packetType => "useAdrenalineItem";
     }
 
     public record UseQuickshotItemPacket : ClientPacket {
