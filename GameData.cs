@@ -63,7 +63,6 @@ namespace liveorlive_server {
                 if (index < this.currentTurnIndex) {
                     this.currentTurnIndex--;
                 }
-                this.currentTurnIndex = this.currentTurnIndex % this.turnOrder.Count;
             }
             this.getPlayerByUsername(username).isSpectator = true;
         }

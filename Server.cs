@@ -150,6 +150,8 @@ namespace liveorlive_server {
                     case ShootPlayerPacket shootPlayerPacket:
                         // Make sure it's the players turn
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            // TODO subtract life, check for double damage, etc.
+                            await broadcast(new PlayerShotPacket { target = shootPlayerPacket.target });
                             await this.nextTurn();
                         }
                         break;
@@ -188,7 +190,7 @@ namespace liveorlive_server {
             await broadcast(new TurnStartedPacket { username = playerForTurn.username });
 
             if (playerForTurn.inGame == false) {
-                // await broadcast(new PlayerShot { target = playerForTurn.username });
+                await broadcast(new PlayerShotPacket { target = playerForTurn.username });
                 await this.nextTurn();
             }
         }
