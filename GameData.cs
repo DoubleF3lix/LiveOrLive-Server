@@ -42,6 +42,14 @@ namespace liveorlive_server {
             return playerForTurn;
         }
 
+        public AmmoType pullAmmoFromChamber() {
+            return this.ammoDeck.pop();
+        }
+
+        public int getAmmoInChamberCount() {
+            return this.ammoDeck.Count;
+        }
+
         public Player getCurrentPlayerForTurn() {
             return this.getPlayerByUsername(this.turnOrder[this.currentTurnIndex]);
         }
@@ -50,21 +58,21 @@ namespace liveorlive_server {
             return this.players.Where(player => player.inGame == true && player.isSpectator == false).ToList();
         }
 
-        private Player getPlayerByUsername(string username) {
+        public Player getPlayerByUsername(string username) {
             return this.players.Find(player => player.username == username);
         }
 
         // Remove player from the turnOrder list, adjusting the index backwards if necessary to avoid influencing order
         // Also marks as spectator
-        public void eliminatePlayer(string username) {
-            int index = this.turnOrder.IndexOf(username);
+        public void eliminatePlayer(Player player) {
+            int index = this.turnOrder.IndexOf(player.username);
             if (index != -1) {
                 this.turnOrder.RemoveAt(index);
                 if (index < this.currentTurnIndex) {
                     this.currentTurnIndex--;
                 }
             }
-            this.getPlayerByUsername(username).isSpectator = true;
+            player.isSpectator = true;
         }
     }
 }

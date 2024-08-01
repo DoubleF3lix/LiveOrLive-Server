@@ -54,9 +54,10 @@
         public required string reason;
     }
 
-    public record PlayerShotPacket : ServerPacket {
-        public string packetType => "playerShot";
+    public record PlayerShotAtPacket : ServerPacket {
+        public string packetType => "playerShotAt";
         public required string target;
+        public required AmmoType ammoType;
     }
 
     public record SkipItemUsedPacket : ServerPacket {

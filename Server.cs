@@ -65,6 +65,7 @@ namespace liveorlive_server {
                 // If they're the host, try to pass that status on to someone else
                 // If they don't have a player assigned, don't bother
                 if (client.player?.username == this.gameData.host) {
+                    // TODO null error here (client is made null while iterating over it?)
                     if (this.connectedClients.Count(client => client.player != null) > 0) {
                         Player newHost = this.connectedClients[0].player;
                         this.gameData.host = newHost.username;
@@ -140,7 +141,9 @@ namespace liveorlive_server {
                     case StartGamePacket startGamePacket:
                         // Host only packet
                         if (sender.player.username == this.gameData.host) {
-                            if (this.connectedClients.Count >= 2 && this.gameData.getActivePlayers().Count >= 2) {
+                            if (this.gameData.gameStarted) {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "The game is already started. How did you even manage that?" });
+                            } else if (this.connectedClients.Count >= 2 && this.gameData.getActivePlayers().Count >= 2) {
                                 await this.startGame();
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "There needs to be at least 2 players to start a game" });
@@ -150,9 +153,27 @@ namespace liveorlive_server {
                     case ShootPlayerPacket shootPlayerPacket:
                         // Make sure it's the players turn
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
-                            // TODO subtract life, check for double damage, etc.
-                            await broadcast(new PlayerShotPacket { target = shootPlayerPacket.target });
-                            await this.nextTurn();
+                            // TODO turn this into a function so that nextTurn(inGame == false) can copy the logic
+                            Player target = this.gameData.getPlayerByUsername(shootPlayerPacket.target);
+                            AmmoType shot = this.gameData.pullAmmoFromChamber();
+                            await broadcast(new PlayerShotAtPacket { target = shootPlayerPacket.target, ammoType = shot });
+                            if (shot == AmmoType.Live) {
+                                // TODO check for double damage
+                                target.lives--;
+                                if (target.lives <= 0) {
+                                    this.gameData.eliminatePlayer(target);
+                                    // TODO send elimination packet maybe?
+                                }
+                                await this.nextTurn();
+                            } else if (target != sender.player) {
+                                await this.nextTurn();
+                            }
+                            // Only case not covered is if it was blank and the target was the player, in which case, they get to go again
+                        }
+
+                        // TODO check for empty chamber, start new round
+                        if (this.gameData.getAmmoInChamberCount() <= 0) {
+                            await this.startNewRound();
                         }
                         break;
                     default:
@@ -181,6 +202,9 @@ namespace liveorlive_server {
         }
 
         public async Task nextTurn() {
+            // TODO game over
+            // if (this.gameData.players.Count == 1) {}
+
             // Send the turn end packet for the previous player (if there was one) automaticaly
             if (this.gameData.currentTurn != null) { 
                 await broadcast(new TurnEndedPacket { username = this.gameData.currentTurn }); 
@@ -190,7 +214,7 @@ namespace liveorlive_server {
             await broadcast(new TurnStartedPacket { username = playerForTurn.username });
 
             if (playerForTurn.inGame == false) {
-                await broadcast(new PlayerShotPacket { target = playerForTurn.username });
+                await broadcast(new PlayerShotAtPacket { target = playerForTurn.username, ammoType = this.gameData.pullAmmoFromChamber() });
                 await this.nextTurn();
             }
         }

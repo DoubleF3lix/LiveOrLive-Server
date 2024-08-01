@@ -4,6 +4,8 @@
 
         public abstract void refresh();
 
+        public int Count { get { return this.deck.Count; } }
+
         // Fisher-Yates
         public void shuffle() {
             Random random = new Random();
