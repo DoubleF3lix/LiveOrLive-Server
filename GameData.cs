@@ -1,12 +1,11 @@
-﻿using Newtonsoft.Json;
-
-namespace liveorlive_server {
+﻿namespace liveorlive_server {
     public class GameData {
         public List<Player> players = [];
         public string? host = null;
         public bool gameStarted = false;
         public string? currentTurn = null;
         public readonly string gameID = Guid.NewGuid().ToString();
+        public List<string> gameLog = [];
 
         private List<string> turnOrder = []; // Usernames
         private int currentTurnIndex;

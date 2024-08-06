@@ -110,6 +110,11 @@
         public required string content;
     }
 
+    public record NewGameLogMessageSentPacket : ServerPacket {
+        public string packetType => "newGameLogMessageSent";
+        public required string content;
+    }
+
     // Client packets
     public record JoinGamePacket : ClientPacket {
         public string packetType => "joinGame";

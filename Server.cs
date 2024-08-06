@@ -1,8 +1,6 @@
 using System.Net;
 using System.Net.WebSockets;
-using System.Reflection;
 using System.Text;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Newtonsoft.Json;
 
 
@@ -171,7 +169,7 @@ namespace liveorlive_server {
                             // Only case not covered is if it was blank and the target was the player, in which case, they get to go again
                         }
 
-                        // TODO check for empty chamber, start new round
+                        // TODO check for empty chamber, start new round (start on the last player who went)
                         if (this.gameData.getAmmoInChamberCount() <= 0) {
                             await this.startNewRound();
                         }
@@ -202,8 +200,14 @@ namespace liveorlive_server {
         }
 
         public async Task nextTurn() {
-            // TODO game over
-            // if (this.gameData.players.Count == 1) {}
+            // TODO game over packet, add items
+            if (this.gameData.players.Count(player => player.isSpectator == false) == 1) {
+                this.gameData = new GameData();
+                // TODO copy all players over
+                return;
+            }
+
+            // TODO make gameLog populate on server side, not client
 
             // Send the turn end packet for the previous player (if there was one) automaticaly
             if (this.gameData.currentTurn != null) { 
