@@ -72,6 +72,12 @@ namespace liveorlive_server {
                         this.gameData.host = null;
                     }
                 }
+                // If the game hasn't started, just remove them entirely
+                if (!this.gameData.gameStarted) {
+                    if (client.player != null) {
+                        this.gameData.players.Remove(this.gameData.getPlayerByUsername(client.player.username));
+                    }
+                }
                 client.onDisconnect();
             }
         }
@@ -136,8 +142,8 @@ namespace liveorlive_server {
                     case GameDataRequestPacket gameInfoRequestPacket:
                         await this.syncGameData();
                         break;
+                    // Host only packet
                     case StartGamePacket startGamePacket:
-                        // Host only packet
                         if (sender.player.username == this.gameData.host) {
                             if (this.gameData.gameStarted) {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "The game is already started. How did you even manage that?" });
@@ -168,11 +174,6 @@ namespace liveorlive_server {
                             }
                             // Only case not covered is if it was blank and the target was the player, in which case, they get to go again
                         }
-
-                        // TODO check for empty chamber, start new round (start on the last player who went)
-                        if (this.gameData.getAmmoInChamberCount() <= 0) {
-                            await this.startNewRound();
-                        }
                         break;
                     default:
                         throw new Exception("Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
@@ -189,6 +190,10 @@ namespace liveorlive_server {
         }
 
         public async Task startNewRound() {
+            if (await this.checkForGameEnd()) {
+                return;
+            }
+
             List<int> ammoCounts = this.gameData.newRound();
             await broadcast(new NewRoundStartedPacket { 
                 players = this.gameData.players, 
@@ -201,25 +206,61 @@ namespace liveorlive_server {
 
         public async Task nextTurn() {
             // TODO game over packet, add items
-            if (this.gameData.players.Count(player => player.isSpectator == false) == 1) {
-                this.gameData = new GameData();
-                // TODO copy all players over
+            // TODO make gameLog populate on server side, not client
+            if (await this.checkForGameEnd()) {
                 return;
             }
-
-            // TODO make gameLog populate on server side, not client
 
             // Send the turn end packet for the previous player (if there was one) automaticaly
             if (this.gameData.currentTurn != null) { 
                 await broadcast(new TurnEndedPacket { username = this.gameData.currentTurn }); 
             }
-            
+
+            // TODO start on the right player when triggering this (preserve turn order)
+            if (this.gameData.getAmmoInChamberCount() <= 0) {
+                await this.startNewRound();
+            }
+
             Player playerForTurn = this.gameData.startNewTurn();
             await broadcast(new TurnStartedPacket { username = playerForTurn.username });
 
             if (playerForTurn.inGame == false) {
                 await broadcast(new PlayerShotAtPacket { target = playerForTurn.username, ammoType = this.gameData.pullAmmoFromChamber() });
                 await this.nextTurn();
+            }
+        }
+
+        public async Task<bool> checkForGameEnd() {
+            // Check if there's one player left standing or if all but one player has left
+            await Console.Out.WriteLineAsync(this.gameData.players.Count(player => player.isSpectator == false).ToString());
+            if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 || this.connectedClients.Count <= 1) {
+                await this.endGame();
+                return true;
+            }
+            return false;
+        }
+
+        public async Task endGame() {
+            // Broadcast message only if there is anyone to broadcast to (AKA it didn't end by all players DC)
+            if (this.connectedClients.Count >= 1) {
+                await this.sendGameLogMessage($"The game has ended. The winner is {this.gameData.players.Find(player => player.lives >= 1).username}");
+
+                // Copy any data we may need (like players)
+                GameData newGameData = new GameData {
+                    players = this.gameData.players.Where(player => player.inGame).Select(player => {
+                        player.isSpectator = false;
+                        player.items.Clear();
+                        player.lives = Player.DEFAULT_LIVES;
+                        return player;
+                    }).ToList(),
+                    host = this.gameData.host,
+                    gameLog = new(this.gameData.gameLog)
+                };
+                this.gameData = newGameData;
+                await this.syncGameData();
+            } else {
+                // Otherwise, we can just nuke existing data and start fresh
+                this.gameData = new GameData();
             }
         }
 
@@ -233,6 +274,14 @@ namespace liveorlive_server {
 
         public async Task syncGameData() {
             await broadcast(new GameDataSyncPacket { gameData = this.gameData });
+        }
+
+        public async Task sendGameLogMessage(string content) {
+            GameLogMessage message = new GameLogMessage(content);
+            this.gameData.gameLog.Add(message);
+            await this.broadcast(new NewGameLogMessageSentPacket {
+                message = message
+            });
         }
 
         public async Task broadcast(ServerPacket packet) {

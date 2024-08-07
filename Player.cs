@@ -1,11 +1,13 @@
 ﻿namespace liveorlive_server {
     // Internal server representation of player data
     public class Player {
+        public const int DEFAULT_LIVES = 5;
+
         public string username;
         public bool inGame;
         public bool isSpectator;
 
-        public int lives = 5;
+        public int lives = DEFAULT_LIVES;
         public List<Item> items = new List<Item>(4);
         public bool isSkipped = false;
 

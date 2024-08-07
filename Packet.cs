@@ -112,7 +112,7 @@
 
     public record NewGameLogMessageSentPacket : ServerPacket {
         public string packetType => "newGameLogMessageSent";
-        public required string content;
+        public required GameLogMessage message;
     }
 
     // Client packets

@@ -5,7 +5,7 @@
         public bool gameStarted = false;
         public string? currentTurn = null;
         public readonly string gameID = Guid.NewGuid().ToString();
-        public List<string> gameLog = [];
+        public List<GameLogMessage> gameLog = [];
 
         private List<string> turnOrder = []; // Usernames
         private int currentTurnIndex;
@@ -72,6 +72,7 @@
                 }
             }
             player.isSpectator = true;
+            player.lives = 0;
         }
     }
 }
