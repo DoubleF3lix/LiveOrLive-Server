@@ -258,6 +258,7 @@ namespace liveorlive_server {
 
         public async Task<bool> checkForGameEnd() {
             // Check if there's one player left standing or if all but one player has left
+            // TODO Need to move game ending logic to client disconnect. Why would this run? Leaving isn't a game action you idiot
             if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 || this.connectedClients.Count <= 1) {
                 await this.endGame();
                 return true;
