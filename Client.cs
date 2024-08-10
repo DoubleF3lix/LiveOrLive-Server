@@ -20,7 +20,7 @@ namespace liveorlive_server {
         // Sends a message to the corresponding client that this instance represents
         public async Task sendMessage(ServerPacket packet, bool printLog = true) {
             if (printLog) {
-                await Console.Out.WriteLineAsync($"Sending packet to {this.ToString()}: {packet}");
+                await Console.Out.WriteLineAsync($"Sending packet to {this.ToString()}: {JsonConvert.SerializeObject(packet)}");
             }
             string dataStr = JsonConvert.SerializeObject(packet, new PacketJSONConverter());
             var bytes = Encoding.UTF8.GetBytes(dataStr);

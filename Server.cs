@@ -113,7 +113,6 @@ namespace liveorlive_server {
 
                         // Check if the username was available
                         bool usernameTaken = this.gameData.players.Any(player => player.username == joinGamePacket.username);
-                        await Console.Out.WriteLineAsync($"Username taken for \"{joinGamePacket.username}\": {usernameTaken}");
                         if (!usernameTaken) {
                             sender.player = new Player(joinGamePacket.username, false, this.gameData.gameStarted);
                             this.gameData.players.Add(sender.player);
@@ -307,7 +306,6 @@ namespace liveorlive_server {
         }
 
         public async Task sendGameLogMessage(string content) {
-            await Console.Out.WriteLineAsync($"Sending game log message: {content}");
             GameLogMessage message = new GameLogMessage(content);
             this.gameData.gameLog.Add(message);
             await this.broadcast(new NewGameLogMessageSentPacket {
@@ -316,7 +314,7 @@ namespace liveorlive_server {
         }
 
         public async Task broadcast(ServerPacket packet) {
-            await Console.Out.WriteLineAsync($"Broadcasting {packet}");
+            await Console.Out.WriteLineAsync($"Broadcasting {JsonConvert.SerializeObject(packet)}");
             foreach (Client client in this.connectedClients) {
                 if (client.player?.inGame ?? false) {
                     await client.sendMessage(packet, false);
