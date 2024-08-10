@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using Newtonsoft.Json;
@@ -83,6 +84,12 @@ namespace liveorlive_server {
                 if (!this.gameData.gameStarted) {
                     if (client.player != null) {
                         this.gameData.players.Remove(this.gameData.getPlayerByUsername(client.player.username));
+                        await this.syncGameData();
+                    }
+                } else {
+                    if (this.connectedClients.Count <= 1) {
+                        await Console.Out.WriteLineAsync("Everyone has left the game. Ending with no winner.");
+                        await this.endGame();
                     }
                 }
                 client.onDisconnect();
@@ -168,12 +175,13 @@ namespace liveorlive_server {
                             Player target = this.gameData.getPlayerByUsername(shootPlayerPacket.target);
                             AmmoType shot = this.gameData.pullAmmoFromChamber();
                             await broadcast(new PlayerShotAtPacket { target = shootPlayerPacket.target, ammoType = shot });
+                            await this.sendGameLogMessage($"{sender.player.username} shot {target.username} with a {shot.ToString().ToLower()} round.");
 
                             bool isTurnEndingMove = true;
 
                             // If it's a live, regardless of who, the turn is over
                             if (shot == AmmoType.Live) {
-                                // TODO check for double damage
+                                // TODO check for double damage, add damage parameter to packet
                                 target.lives--;
                                 if (target.lives <= 0) {
                                     this.gameData.eliminatePlayer(target);
@@ -220,9 +228,9 @@ namespace liveorlive_server {
             await broadcast(new NewRoundStartedPacket { 
                 players = this.gameData.players, 
                 liveCount = ammoCounts[0],
-                blankCount = ammoCounts[1] 
+                blankCount = ammoCounts[1]
             });
-
+            await this.sendGameLogMessage($"A new round has started. The chamber has been loaded with {ammoCounts[0]} live round{(ammoCounts[0] != 1 ? "s" : "")} and {ammoCounts[1]} blank{(ammoCounts[1] != 1 ? "s" : "")}.");
             if (advanceTurn) {
                 await this.nextTurn();
             }
@@ -257,9 +265,10 @@ namespace liveorlive_server {
         }
 
         public async Task<bool> checkForGameEnd() {
-            // Check if there's one player left standing or if all but one player has left
-            // TODO Need to move game ending logic to client disconnect. Why would this run? Leaving isn't a game action you idiot
-            if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 || this.connectedClients.Count <= 1) {
+            // Check if there's one player left standing
+            // Make sure the game is still going in case this triggers twice
+            // TODO maybe rethink new turn trigger new round and having double execution stuff
+            if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 && this.gameData.gameStarted) {
                 await this.endGame();
                 return true;
             }
@@ -267,27 +276,22 @@ namespace liveorlive_server {
         }
 
         public async Task endGame() {
-            // Broadcast message only if there is anyone to broadcast to (AKA it didn't end by all players DC)
-            if (this.connectedClients.Count >= 1) {
-                await this.sendGameLogMessage($"The game has ended. The winner is {this.gameData.players.Find(player => player.lives >= 1).username}.");
+            // There's almost certainly at least one player left when this runs (used to just wipe if there was nobody left, but that situation requires 2 people to DC at once which I don't care enough to account for)
+            await this.sendGameLogMessage($"The game has ended. The winner is {this.gameData.players.Find(player => player.lives >= 1).username}.");
 
-                // Copy any data we may need (like players)
-                GameData newGameData = new GameData {
-                    players = this.gameData.players.Where(player => player.inGame).Select(player => {
-                        player.isSpectator = false;
-                        player.items.Clear();
-                        player.lives = Player.DEFAULT_LIVES;
-                        return player;
-                    }).ToList(),
-                    host = this.gameData.host,
-                    gameLog = new(this.gameData.gameLog)
-                };
-                this.gameData = newGameData;
-                await this.syncGameData();
-            } else {
-                // Otherwise, we can just nuke existing data and start fresh
-                this.gameData = new GameData();
-            }
+            // Copy any data we may need (like players)
+            GameData newGameData = new GameData {
+                players = this.gameData.players.Where(player => player.inGame).Select(player => {
+                    player.isSpectator = false;
+                    player.items.Clear();
+                    player.lives = Player.DEFAULT_LIVES;
+                    return player;
+                }).ToList(),
+                host = this.gameData.host,
+                gameLog = new(this.gameData.gameLog)
+            };
+            this.gameData = newGameData;
+            await this.syncGameData();
         }
 
         public Client? getClientForCurrentTurn() {
