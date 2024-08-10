@@ -18,8 +18,10 @@ namespace liveorlive_server {
         }
 
         // Sends a message to the corresponding client that this instance represents
-        public async Task sendMessage(ServerPacket packet) {
-            await Console.Out.WriteLineAsync($"Sending packet to {this.ToString()}: {packet.ToString()}");
+        public async Task sendMessage(ServerPacket packet, bool printLog = true) {
+            if (printLog) {
+                await Console.Out.WriteLineAsync($"Sending packet to {this.ToString()}: {packet}");
+            }
             string dataStr = JsonConvert.SerializeObject(packet, new PacketJSONConverter());
             var bytes = Encoding.UTF8.GetBytes(dataStr);
             await this.webSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length), WebSocketMessageType.Text, true, CancellationToken.None);

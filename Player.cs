@@ -1,7 +1,7 @@
 ﻿namespace liveorlive_server {
     // Internal server representation of player data
     public class Player {
-        public const int DEFAULT_LIVES = 5;
+        public const int DEFAULT_LIVES = 2; // TODO should be 5
 
         public string username;
         public bool inGame;

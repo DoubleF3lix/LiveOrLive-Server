@@ -36,6 +36,13 @@ namespace liveorlive_server {
 
         // All clients are held in here, and this function only exits when they disconnect
         private async Task ClientConnection(WebSocket webSocket, string ID) {
+            // Sometimes, clients can get stuck in a bugged closed state. This will attempt to purge them.
+            foreach (Client c in this.connectedClients) {
+                if (c.webSocket.State == WebSocketState.Closed) {
+                    this.connectedClients.Remove(c);
+                }
+            }
+
             Client client = new Client(webSocket, this, ID);
             this.connectedClients.Add(client);
 
@@ -161,18 +168,28 @@ namespace liveorlive_server {
                             Player target = this.gameData.getPlayerByUsername(shootPlayerPacket.target);
                             AmmoType shot = this.gameData.pullAmmoFromChamber();
                             await broadcast(new PlayerShotAtPacket { target = shootPlayerPacket.target, ammoType = shot });
+
+                            bool isTurnEndingMove = true;
+
+                            // If it's a live, regardless of who, the turn is over
                             if (shot == AmmoType.Live) {
                                 // TODO check for double damage
                                 target.lives--;
                                 if (target.lives <= 0) {
                                     this.gameData.eliminatePlayer(target);
-                                    // TODO send elimination packet maybe?
+                                    await this.sendGameLogMessage($"{target.username} has been eliminated.");
                                 }
                                 await this.nextTurn();
+                            // If it was a blank and they shot someone else, their turn is over
                             } else if (target != sender.player) {
                                 await this.nextTurn();
+                            // If it was a blank and they shot themselves
+                            } else {
+                                isTurnEndingMove = false;
                             }
-                            // Only case not covered is if it was blank and the target was the player, in which case, they get to go again
+                            // Regardless, we need to check if the chamber is empty after each shot
+                            // In case this triggers a round end, we pass along whether or not it was a turn ending shot, so that when the new round start, it's still that players turn
+                            await this.checkForRoundEnd(isTurnEndingMove);
                         }
                         break;
                     default:
@@ -189,8 +206,13 @@ namespace liveorlive_server {
             await this.startNewRound();
         }
 
-        public async Task startNewRound() {
-            if (await this.checkForGameEnd()) {
+        public async Task startNewRound(bool advanceTurn = true) {
+            // We need to check if the game has started, since if the player shoots another, eliminates them, and ends the game, it runs nextTurn.
+            // This triggers the game end, which resets the game data, and then checkForNewRound is called.
+            // If there are still bullets in the chamber, it calls this function (startNewRound).
+            // checkForGameEnd sees the reset game data, sees there are still players, and tries to start a new round.
+            // This bug took way too freaking long to track down. Phew.
+            if (await this.checkForGameEnd() || !this.gameData.gameStarted) {
                 return;
             }
 
@@ -201,7 +223,9 @@ namespace liveorlive_server {
                 blankCount = ammoCounts[1] 
             });
 
-            await this.nextTurn();
+            if (advanceTurn) {
+                await this.nextTurn();
+            }
         }
 
         public async Task nextTurn() {
@@ -216,23 +240,24 @@ namespace liveorlive_server {
                 await broadcast(new TurnEndedPacket { username = this.gameData.currentTurn }); 
             }
 
-            // TODO start on the right player when triggering this (preserve turn order)
-            if (this.gameData.getAmmoInChamberCount() <= 0) {
-                await this.startNewRound();
-            }
-
             Player playerForTurn = this.gameData.startNewTurn();
             await broadcast(new TurnStartedPacket { username = playerForTurn.username });
 
+            // If the player left the game, have them shoot themselves and move on
             if (playerForTurn.inGame == false) {
                 await broadcast(new PlayerShotAtPacket { target = playerForTurn.username, ammoType = this.gameData.pullAmmoFromChamber() });
                 await this.nextTurn();
             }
         }
 
+        public async Task checkForRoundEnd(bool advanceTurn = true) {
+            if (this.gameData.getAmmoInChamberCount() <= 0) {
+                await this.startNewRound(advanceTurn);
+            }
+        }
+
         public async Task<bool> checkForGameEnd() {
             // Check if there's one player left standing or if all but one player has left
-            await Console.Out.WriteLineAsync(this.gameData.players.Count(player => player.isSpectator == false).ToString());
             if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 || this.connectedClients.Count <= 1) {
                 await this.endGame();
                 return true;
@@ -243,7 +268,7 @@ namespace liveorlive_server {
         public async Task endGame() {
             // Broadcast message only if there is anyone to broadcast to (AKA it didn't end by all players DC)
             if (this.connectedClients.Count >= 1) {
-                await this.sendGameLogMessage($"The game has ended. The winner is {this.gameData.players.Find(player => player.lives >= 1).username}");
+                await this.sendGameLogMessage($"The game has ended. The winner is {this.gameData.players.Find(player => player.lives >= 1).username}.");
 
                 // Copy any data we may need (like players)
                 GameData newGameData = new GameData {
@@ -277,6 +302,7 @@ namespace liveorlive_server {
         }
 
         public async Task sendGameLogMessage(string content) {
+            await Console.Out.WriteLineAsync($"Sending game log message: {content}");
             GameLogMessage message = new GameLogMessage(content);
             this.gameData.gameLog.Add(message);
             await this.broadcast(new NewGameLogMessageSentPacket {
@@ -285,9 +311,10 @@ namespace liveorlive_server {
         }
 
         public async Task broadcast(ServerPacket packet) {
+            await Console.Out.WriteLineAsync($"Broadcasting {packet}");
             foreach (Client client in this.connectedClients) {
                 if (client.player?.inGame ?? false) {
-                    await client.sendMessage(packet);
+                    await client.sendMessage(packet, false);
                 }
             }
         }

@@ -3,24 +3,23 @@
         public List<Player> players = [];
         public string? host = null;
         public bool gameStarted = false;
-        public string? currentTurn = null;
         public readonly string gameID = Guid.NewGuid().ToString();
         public List<GameLogMessage> gameLog = [];
 
-        private List<string> turnOrder = []; // Usernames
-        private int currentTurnIndex;
+        public string currentTurn { get { return this.turnOrderManager.currentTurn; } }
 
+        private TurnOrderManager turnOrderManager;
         private ItemDeck itemDeck;
         private AmmoDeck ammoDeck;
 
         public GameData() {
+            this.turnOrderManager = new TurnOrderManager();
             this.itemDeck = new ItemDeck(this.players.Count);
             this.ammoDeck = new AmmoDeck();
         }
 
         public void startGame() {
-            this.turnOrder = this.players.Where(player => player.inGame == true).Select(player => player.username).ToList();
-            this.currentTurnIndex = -1;
+            this.turnOrderManager.populate(this.players);
             this.gameStarted = true;
         }
 
@@ -35,10 +34,8 @@
         }
 
         public Player startNewTurn() {
-            this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.Count;
-            Player playerForTurn = this.getCurrentPlayerForTurn();
-            this.currentTurn = playerForTurn.username;
-            return playerForTurn;
+            this.turnOrderManager.advance();
+            return this.getCurrentPlayerForTurn();
         }
 
         public AmmoType pullAmmoFromChamber() {
@@ -50,7 +47,7 @@
         }
 
         public Player getCurrentPlayerForTurn() {
-            return this.getPlayerByUsername(this.turnOrder[this.currentTurnIndex]);
+            return this.getPlayerByUsername(this.turnOrderManager.currentTurn);
         }
 
         public List<Player> getActivePlayers() {
@@ -64,13 +61,7 @@
         // Remove player from the turnOrder list, adjusting the index backwards if necessary to avoid influencing order
         // Also marks as spectator
         public void eliminatePlayer(Player player) {
-            int index = this.turnOrder.IndexOf(player.username);
-            if (index != -1) {
-                this.turnOrder.RemoveAt(index);
-                if (index < this.currentTurnIndex) {
-                    this.currentTurnIndex--;
-                }
-            }
+            this.turnOrderManager.eliminatePlayer(player.username);
             player.isSpectator = true;
             player.lives = 0;
         }
