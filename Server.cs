@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using Newtonsoft.Json;
@@ -12,6 +11,7 @@ namespace liveorlive_server {
         List<Client> connectedClients = new List<Client>();
         GameData gameData = new GameData();
         public Chat chat = new Chat();
+        // TODO store GameLog in its own class as well (can still be stored in redux I guess)
 
         public Server() {
             this.app = WebApplication.CreateBuilder().Build();
@@ -90,6 +90,8 @@ namespace liveorlive_server {
                     if (this.connectedClients.Count <= 1) {
                         await Console.Out.WriteLineAsync("Everyone has left the game. Ending with no winner.");
                         await this.endGame();
+                    } else {
+                        this.gameData = new GameData();
                     }
                 }
                 client.onDisconnect();
@@ -171,31 +173,8 @@ namespace liveorlive_server {
                         // Make sure it's the players turn
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
                             // TODO turn this into a function so that nextTurn(inGame == false) can copy the logic
-                            Player target = this.gameData.getPlayerByUsername(shootPlayerPacket.target);
-                            AmmoType shot = this.gameData.pullAmmoFromChamber();
-                            await broadcast(new PlayerShotAtPacket { target = shootPlayerPacket.target, ammoType = shot });
-                            await this.sendGameLogMessage($"{sender.player.username} shot {target.username} with a {shot.ToString().ToLower()} round.");
-
-                            bool isTurnEndingMove = true;
-
-                            // If it's a live, regardless of who, the turn is over
-                            if (shot == AmmoType.Live) {
-                                // TODO check for double damage, add damage parameter to packet
-                                target.lives--;
-                                if (target.lives <= 0) {
-                                    this.gameData.eliminatePlayer(target);
-                                    await this.sendGameLogMessage($"{target.username} has been eliminated.");
-                                }
-                                await this.nextTurn();
-                            // If it was a blank and they shot someone else, their turn is over
-                            } else if (target != sender.player) {
-                                await this.nextTurn();
-                            // If it was a blank and they shot themselves
-                            } else {
-                                isTurnEndingMove = false;
-                            }
+                            bool isTurnEndingMove = await this.shootPlayer(sender.player, this.gameData.getPlayerByUsername(shootPlayerPacket.target));
                             // Regardless, we need to check if the chamber is empty after each shot
-                            // In case this triggers a round end, we pass along whether or not it was a turn ending shot, so that when the new round start, it's still that players turn
                             await this.checkForRoundEnd(isTurnEndingMove);
                         }
                         break;
@@ -203,6 +182,46 @@ namespace liveorlive_server {
                         throw new Exception("Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
                 }
             }
+        }
+
+        // autoShiftTurn is set to false on turn forfeit since it always advances
+        // TODO shooting breaks if someone leaves??
+        // TODO act when player leaves during their turn
+        private async Task<bool> shootPlayer(Player shooter, Player target, bool autoShiftTurn = true) {
+            AmmoType shot = this.gameData.pullAmmoFromChamber();
+            await broadcast(new PlayerShotAtPacket { target = target.username, ammoType = shot });
+
+            if (shooter != target) {
+                await this.sendGameLogMessage($"{shooter.username} shot {target.username} with a {shot.ToString().ToLower()} round.");
+            } else {
+                await this.sendGameLogMessage($"{shooter.username} shot themselves with a {shot.ToString().ToLower()} round.");
+            }
+            
+            bool isTurnEndingMove = true;
+            // If it's a live round, regardless of who, the turn is over
+            if (shot == AmmoType.Live) {
+                // TODO check for double damage, add damage parameter to packet
+                target.lives--;
+                if (target.lives <= 0) {
+                    this.gameData.eliminatePlayer(target);
+                    await this.sendGameLogMessage($"{target.username} has been eliminated.");
+                }
+            } else if (target == shooter) { // Implied it was a blank round
+                isTurnEndingMove = false;
+            }
+
+            // This only runs if it was a live round, or it was a blank and they didn't shoot themselves
+            if (isTurnEndingMove && autoShiftTurn) {
+                await this.nextTurn();
+            }
+            // In case this triggers a round end, we pass along whether or not it was a turn ending shot, so that when a new round starts, it's still that players turn
+            return isTurnEndingMove;
+        }
+
+        // Player shoots themselves once and does not get to go again if it was blank
+        private async Task forfeitTurn(Player player) {
+            await this.shootPlayer(player, player, false);
+            await this.nextTurn();
         }
 
         public async Task startGame() {
@@ -230,6 +249,7 @@ namespace liveorlive_server {
                 blankCount = ammoCounts[1]
             });
             await this.sendGameLogMessage($"A new round has started. The chamber has been loaded with {ammoCounts[0]} live round{(ammoCounts[0] != 1 ? "s" : "")} and {ammoCounts[1]} blank{(ammoCounts[1] != 1 ? "s" : "")}.");
+
             if (advanceTurn) {
                 await this.nextTurn();
             }
@@ -237,7 +257,6 @@ namespace liveorlive_server {
 
         public async Task nextTurn() {
             // TODO game over packet, add items
-            // TODO make gameLog populate on server side, not client
             if (await this.checkForGameEnd()) {
                 return;
             }
@@ -251,9 +270,8 @@ namespace liveorlive_server {
             await broadcast(new TurnStartedPacket { username = playerForTurn.username });
 
             // If the player left the game, have them shoot themselves and move on
-            if (playerForTurn.inGame == false) {
-                await broadcast(new PlayerShotAtPacket { target = playerForTurn.username, ammoType = this.gameData.pullAmmoFromChamber() });
-                await this.nextTurn();
+            if (!playerForTurn.inGame) {
+                await this.forfeitTurn(playerForTurn);
             }
         }
 
