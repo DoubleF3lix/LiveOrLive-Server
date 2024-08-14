@@ -68,6 +68,7 @@ namespace liveorlive_server {
                 // Abormal disconnection, finally block has us covered
             } finally {
                 this.connectedClients.Remove(client);
+
                 // If they're the host, try to pass that status on to someone else
                 // If they don't have a player assigned, don't bother
                 if (client.player?.username == this.gameData.host) {
@@ -80,6 +81,7 @@ namespace liveorlive_server {
                         this.gameData.host = null;
                     }
                 }
+
                 // If the game hasn't started, just remove them entirely
                 if (!this.gameData.gameStarted) {
                     if (client.player != null) {
@@ -87,11 +89,13 @@ namespace liveorlive_server {
                         await this.syncGameData();
                     }
                 } else {
-                    if (this.connectedClients.Count <= 1) {
+                    // If there is only one actively connected player and the game is in progress, end it
+                    if (this.connectedClients.Where(client => client.player != null).Count() <= 1) {
                         await Console.Out.WriteLineAsync("Everyone has left the game. Ending with no winner.");
                         await this.endGame();
-                    } else {
-                        this.gameData = new GameData();
+                    // Otherwise, if the current turn left, make them forfeit their turn
+                    } else if (client.player != null && client.player.username == this.gameData.currentTurn) {
+                        await this.forfeitTurn(client.player);
                     }
                 }
                 client.onDisconnect();
@@ -174,8 +178,14 @@ namespace liveorlive_server {
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
                             // TODO turn this into a function so that nextTurn(inGame == false) can copy the logic
                             bool isTurnEndingMove = await this.shootPlayer(sender.player, this.gameData.getPlayerByUsername(shootPlayerPacket.target));
+
                             // Regardless, we need to check if the chamber is empty after each shot
-                            await this.checkForRoundEnd(isTurnEndingMove);
+                            await this.checkForRoundEnd();
+
+                            // isTurnEndingMove is only false if they shot themselves with a blank
+                            if (isTurnEndingMove) {
+                                await this.nextTurn();
+                            }
                         }
                         break;
                     default:
@@ -187,7 +197,7 @@ namespace liveorlive_server {
         // autoShiftTurn is set to false on turn forfeit since it always advances
         // TODO shooting breaks if someone leaves??
         // TODO act when player leaves during their turn
-        private async Task<bool> shootPlayer(Player shooter, Player target, bool autoShiftTurn = true) {
+        private async Task<bool> shootPlayer(Player shooter, Player target) {
             AmmoType shot = this.gameData.pullAmmoFromChamber();
             await broadcast(new PlayerShotAtPacket { target = target.username, ammoType = shot });
 
@@ -209,18 +219,15 @@ namespace liveorlive_server {
             } else if (target == shooter) { // Implied it was a blank round
                 isTurnEndingMove = false;
             }
-
-            // This only runs if it was a live round, or it was a blank and they didn't shoot themselves
-            if (isTurnEndingMove && autoShiftTurn) {
-                await this.nextTurn();
-            }
+    
             // In case this triggers a round end, we pass along whether or not it was a turn ending shot, so that when a new round starts, it's still that players turn
             return isTurnEndingMove;
         }
 
         // Player shoots themselves once and does not get to go again if it was blank
         private async Task forfeitTurn(Player player) {
-            await this.shootPlayer(player, player, false);
+            await this.shootPlayer(player, player);
+            await this.checkForRoundEnd();
             await this.nextTurn();
         }
 
@@ -230,9 +237,10 @@ namespace liveorlive_server {
             await broadcast(new GameStartedPacket());
 
             await this.startNewRound();
+            await this.nextTurn();
         }
 
-        public async Task startNewRound(bool advanceTurn = true) {
+        public async Task startNewRound() {
             // We need to check if the game has started, since if the player shoots another, eliminates them, and ends the game, it runs nextTurn.
             // This triggers the game end, which resets the game data, and then checkForNewRound is called.
             // If there are still bullets in the chamber, it calls this function (startNewRound).
@@ -249,10 +257,6 @@ namespace liveorlive_server {
                 blankCount = ammoCounts[1]
             });
             await this.sendGameLogMessage($"A new round has started. The chamber has been loaded with {ammoCounts[0]} live round{(ammoCounts[0] != 1 ? "s" : "")} and {ammoCounts[1]} blank{(ammoCounts[1] != 1 ? "s" : "")}.");
-
-            if (advanceTurn) {
-                await this.nextTurn();
-            }
         }
 
         public async Task nextTurn() {
@@ -275,9 +279,9 @@ namespace liveorlive_server {
             }
         }
 
-        public async Task checkForRoundEnd(bool advanceTurn = true) {
+        public async Task checkForRoundEnd() {
             if (this.gameData.getAmmoInChamberCount() <= 0) {
-                await this.startNewRound(advanceTurn);
+                await this.startNewRound();
             }
         }
 
