@@ -53,6 +53,8 @@ namespace liveorlive_server {
                     return new SendNewChatMessagePacket() { content = (string)data["content"] };
                 case "chatMessagesRequest":
                     return new ChatMessagesRequestPacket();
+                case "gameLogMessagesRequest":
+                    return new GameLogMessagesRequestPacket();
                 default:
                     throw new JsonSerializationException($"Invalid packet type (action not valid): {data.ToString()}");
             }

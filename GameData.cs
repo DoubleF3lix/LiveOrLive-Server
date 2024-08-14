@@ -4,7 +4,6 @@
         public string? host = null;
         public bool gameStarted = false;
         public readonly string gameID = Guid.NewGuid().ToString();
-        public List<GameLogMessage> gameLog = [];
 
         public string currentTurn { get { return this.turnOrderManager.currentTurn; } }
 

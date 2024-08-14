@@ -10,6 +10,7 @@ namespace liveorlive_server {
 
         List<Client> connectedClients = new List<Client>();
         GameData gameData = new GameData();
+        public GameLog gameLog = new GameLog();
         public Chat chat = new Chat();
         // TODO store GameLog in its own class as well (can still be stored in redux I guess)
 
@@ -158,8 +159,11 @@ namespace liveorlive_server {
                     case ChatMessagesRequestPacket getChatMessagesPacket:
                         await sender.sendMessage(new ChatMessagesSyncPacket { messages = this.chat.getMessages() });
                         break;
+                    case GameLogMessagesRequestPacket getGameLogMessagesPacket:
+                        await sender.sendMessage(new GameLogMessagesSyncPacket { messages = this.gameLog.getMessages() });
+                        break;
                     case GameDataRequestPacket gameInfoRequestPacket:
-                        await this.syncGameData();
+                        await sender.sendMessage(new GameDataSyncPacket { gameData = this.gameData });
                         break;
                     // Host only packet
                     case StartGamePacket startGamePacket:
@@ -308,8 +312,7 @@ namespace liveorlive_server {
                     player.lives = Player.DEFAULT_LIVES;
                     return player;
                 }).ToList(),
-                host = this.gameData.host,
-                gameLog = new(this.gameData.gameLog)
+                host = this.gameData.host
             };
             this.gameData = newGameData;
             await this.syncGameData();
@@ -329,7 +332,7 @@ namespace liveorlive_server {
 
         public async Task sendGameLogMessage(string content) {
             GameLogMessage message = new GameLogMessage(content);
-            this.gameData.gameLog.Add(message);
+            this.gameLog.addMessage(message);
             await this.broadcast(new NewGameLogMessageSentPacket {
                 message = message
             });

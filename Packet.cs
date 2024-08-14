@@ -105,6 +105,11 @@
         public required List<ChatMessage> messages;
     }
 
+    public record GameLogMessagesSyncPacket : ServerPacket {
+        public string packetType => "gameLogMessagesSync";
+        public required List<GameLogMessage> messages;
+    }
+
     public record ShowAlertPacket : ServerPacket {
         public string packetType => "showAlert";
         public required string content;
@@ -178,5 +183,9 @@
 
     public record ChatMessagesRequestPacket : ClientPacket {
         public string packetType => "chatMessagesRequest";
+    }
+
+    public record GameLogMessagesRequestPacket : ClientPacket {
+        public string packetType => "gameLogMessagesRequest";
     }
 }
