@@ -58,6 +58,7 @@
         public string packetType => "playerShotAt";
         public required string target;
         public required AmmoType ammoType;
+        public required int damage; // Maybe derive ammoType from the damage (0 = blank?)
     }
 
     public record SkipItemUsedPacket : ServerPacket {

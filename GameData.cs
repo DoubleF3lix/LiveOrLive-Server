@@ -6,6 +6,7 @@
         public readonly string gameID = Guid.NewGuid().ToString();
 
         public string currentTurn { get { return this.turnOrderManager.currentTurn; } }
+        public int damageForShot = 1;
 
         private TurnOrderManager turnOrderManager;
         private ItemDeck itemDeck;

@@ -12,5 +12,9 @@ namespace liveorlive_server {
         public List<GameLogMessage> getMessages() {  
             return this.messages; 
         }
+
+        public void clear() {
+            this.messages.Clear();
+        }
     }
 }

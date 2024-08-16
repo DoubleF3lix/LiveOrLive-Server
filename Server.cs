@@ -183,13 +183,7 @@ namespace liveorlive_server {
                             // TODO turn this into a function so that nextTurn(inGame == false) can copy the logic
                             bool isTurnEndingMove = await this.shootPlayer(sender.player, this.gameData.getPlayerByUsername(shootPlayerPacket.target));
 
-                            // Regardless, we need to check if the chamber is empty after each shot
-                            await this.checkForRoundEnd();
-
-                            // isTurnEndingMove is only false if they shot themselves with a blank
-                            if (isTurnEndingMove) {
-                                await this.nextTurn();
-                            }
+                            await this.postActionTransition(isTurnEndingMove);
                         }
                         break;
                     default:
@@ -203,7 +197,8 @@ namespace liveorlive_server {
         // TODO act when player leaves during their turn
         private async Task<bool> shootPlayer(Player shooter, Player target) {
             AmmoType shot = this.gameData.pullAmmoFromChamber();
-            await broadcast(new PlayerShotAtPacket { target = target.username, ammoType = shot });
+            await broadcast(new PlayerShotAtPacket { target = target.username, ammoType = shot, damage = this.gameData.damageForShot });
+            this.gameData.damageForShot = 1;
 
             if (shooter != target) {
                 await this.sendGameLogMessage($"{shooter.username} shot {target.username} with a {shot.ToString().ToLower()} round.");
@@ -214,8 +209,7 @@ namespace liveorlive_server {
             bool isTurnEndingMove = true;
             // If it's a live round, regardless of who, the turn is over
             if (shot == AmmoType.Live) {
-                // TODO check for double damage, add damage parameter to packet
-                target.lives--;
+                target.lives -= this.gameData.damageForShot;
                 if (target.lives <= 0) {
                     this.gameData.eliminatePlayer(target);
                     await this.sendGameLogMessage($"{target.username} has been eliminated.");
@@ -228,11 +222,30 @@ namespace liveorlive_server {
             return isTurnEndingMove;
         }
 
+        public async Task postActionTransition(bool isTurnEndingMove) {
+            // Check for game end (if there's one player left standing)
+            // Make sure the game is still going in case this triggers twice
+            // TODO maybe rethink new turn trigger new round and having double execution stuff
+            // TODO game over packet
+            if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 && this.gameData.gameStarted) {
+                await this.endGame();
+                return;
+            }
+
+            // Check for round end
+            if (this.gameData.getAmmoInChamberCount() <= 0) {
+                await this.startNewRound();
+            }
+
+            if (isTurnEndingMove) {
+                await this.nextTurn();
+            }
+        }
+
         // Player shoots themselves once and does not get to go again if it was blank
         private async Task forfeitTurn(Player player) {
             await this.shootPlayer(player, player);
-            await this.checkForRoundEnd();
-            await this.nextTurn();
+            await this.postActionTransition(true);
         }
 
         public async Task startGame() {
@@ -244,34 +257,10 @@ namespace liveorlive_server {
             await this.nextTurn();
         }
 
-        public async Task startNewRound() {
-            // We need to check if the game has started, since if the player shoots another, eliminates them, and ends the game, it runs nextTurn.
-            // This triggers the game end, which resets the game data, and then checkForNewRound is called.
-            // If there are still bullets in the chamber, it calls this function (startNewRound).
-            // checkForGameEnd sees the reset game data, sees there are still players, and tries to start a new round.
-            // This bug took way too freaking long to track down. Phew.
-            if (await this.checkForGameEnd() || !this.gameData.gameStarted) {
-                return;
-            }
-
-            List<int> ammoCounts = this.gameData.newRound();
-            await broadcast(new NewRoundStartedPacket { 
-                players = this.gameData.players, 
-                liveCount = ammoCounts[0],
-                blankCount = ammoCounts[1]
-            });
-            await this.sendGameLogMessage($"A new round has started. The chamber has been loaded with {ammoCounts[0]} live round{(ammoCounts[0] != 1 ? "s" : "")} and {ammoCounts[1]} blank{(ammoCounts[1] != 1 ? "s" : "")}.");
-        }
-
         public async Task nextTurn() {
-            // TODO game over packet, add items
-            if (await this.checkForGameEnd()) {
-                return;
-            }
-
             // Send the turn end packet for the previous player (if there was one) automaticaly
-            if (this.gameData.currentTurn != null) { 
-                await broadcast(new TurnEndedPacket { username = this.gameData.currentTurn }); 
+            if (this.gameData.currentTurn != null) {
+                await broadcast(new TurnEndedPacket { username = this.gameData.currentTurn });
             }
 
             Player playerForTurn = this.gameData.startNewTurn();
@@ -283,26 +272,19 @@ namespace liveorlive_server {
             }
         }
 
-        public async Task checkForRoundEnd() {
-            if (this.gameData.getAmmoInChamberCount() <= 0) {
-                await this.startNewRound();
-            }
-        }
-
-        public async Task<bool> checkForGameEnd() {
-            // Check if there's one player left standing
-            // Make sure the game is still going in case this triggers twice
-            // TODO maybe rethink new turn trigger new round and having double execution stuff
-            if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 && this.gameData.gameStarted) {
-                await this.endGame();
-                return true;
-            }
-            return false;
+        public async Task startNewRound() {
+            List<int> ammoCounts = this.gameData.newRound();
+            await broadcast(new NewRoundStartedPacket { 
+                players = this.gameData.players, 
+                liveCount = ammoCounts[0],
+                blankCount = ammoCounts[1]
+            });
+            await this.sendGameLogMessage($"A new round has started. The chamber has been loaded with {ammoCounts[0]} live round{(ammoCounts[0] != 1 ? "s" : "")} and {ammoCounts[1]} blank{(ammoCounts[1] != 1 ? "s" : "")}.");
         }
 
         public async Task endGame() {
             // There's almost certainly at least one player left when this runs (used to just wipe if there was nobody left, but that situation requires 2 people to DC at once which I don't care enough to account for)
-            await this.sendGameLogMessage($"The game has ended. The winner is {this.gameData.players.Find(player => player.lives >= 1).username}.");
+            string winner = this.gameData.players.Find(player => player.lives >= 1).username;
 
             // Copy any data we may need (like players)
             GameData newGameData = new GameData {
@@ -316,6 +298,12 @@ namespace liveorlive_server {
             };
             this.gameData = newGameData;
             await this.syncGameData();
+
+            await Console.Out.WriteLineAsync(JsonConvert.SerializeObject(this.gameData.players));
+
+            this.gameLog.clear();
+            await this.broadcast(new GameLogMessagesSyncPacket { messages = this.gameLog.getMessages() });
+            await this.sendGameLogMessage($"The game has ended. The winner is {winner}.");
         }
 
         public Client? getClientForCurrentTurn() {
