@@ -216,7 +216,6 @@ namespace liveorlive_server {
         private async Task<bool> shootPlayer(Player shooter, Player target) {
             AmmoType shot = this.gameData.pullAmmoFromChamber();
             await broadcast(new PlayerShotAtPacket { target = target.username, ammoType = shot, damage = this.gameData.damageForShot });
-            this.gameData.damageForShot = 1;
 
             if (shooter != target) {
                 await this.sendGameLogMessage($"{shooter.username} shot {target.username} with a {shot.ToString().ToLower()} round.");
@@ -235,7 +234,9 @@ namespace liveorlive_server {
             } else if (target == shooter) { // Implied it was a blank round
                 isTurnEndingMove = false;
             }
-    
+
+            this.gameData.damageForShot = 1;
+
             // In case this triggers a round end, we pass along whether or not it was a turn ending shot, so that when a new round starts, it's still that players turn
             return isTurnEndingMove;
         }
