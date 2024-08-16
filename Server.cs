@@ -186,6 +186,24 @@ namespace liveorlive_server {
                             await this.postActionTransition(isTurnEndingMove);
                         }
                         break;
+                    case UseDoubleDamageItemPacket useDoubleDamageItemPacket:
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            if (this.gameData.damageForShot != 1) {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You've already used a double damage item for this shot!" });
+                            } else {
+                                // Try to remove the item
+                                if (sender.player.items.Remove(Item.DoubleDamage)) {
+                                    await broadcast(new DoubleDamageItemUsedPacket());
+                                    await this.sendGameLogMessage($"{sender.player.username} has used a double damage item");
+                                    this.gameData.damageForShot = 2;
+                                    await this.syncGameData(); // Sync because the item is gone now
+                                // If it fails and they don't have it
+                                } else {
+                                    await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a double damage item! Are you trying to cheat?" });
+                                }
+                            }
+                        }
+                        break;
                     default:
                         throw new Exception("Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
                 }
