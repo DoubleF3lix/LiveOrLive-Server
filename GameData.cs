@@ -46,6 +46,16 @@
             return this.ammoDeck.Count;
         }
 
+        public AmmoType peekAmmoFromChamber() {
+            return this.ammoDeck.peek();
+        }
+
+        public int addAmmoToChamberAndShuffle(AmmoType type) {
+            int count = this.ammoDeck.addAmmo(type);
+            this.ammoDeck.shuffle();
+            return count;
+        }
+
         public Player getCurrentPlayerForTurn() {
             return this.getPlayerByUsername(this.turnOrderManager.currentTurn);
         }

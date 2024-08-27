@@ -77,7 +77,7 @@ namespace liveorlive_server {
                     if (this.connectedClients.Count(client => client.player != null) > 0) {
                         Player newHost = this.connectedClients[0].player;
                         this.gameData.host = newHost.username;
-                        await broadcast(new HostSetPacket { username = this.gameData.host }); // TODO set host function
+                        await this.broadcast(new HostSetPacket { username = this.gameData.host }); // TODO set host function
                     } else {
                         this.gameData.host = null;
                     }
@@ -138,11 +138,11 @@ namespace liveorlive_server {
                         // Either way, we're good to go at this point
                         sender.player.inGame = true;
 
-                        await broadcast(new PlayerJoinedPacket { player = sender.player });
+                        await this.broadcast(new PlayerJoinedPacket { player = sender.player });
                         // If they're the first player, mark them as the host
                         if (this.gameData.getActivePlayers().Count == 1) {
                             // TODO make SetHostPacket send a chat message
-                            await broadcast(new HostSetPacket { username = sender.player.username });
+                            await this.broadcast(new HostSetPacket { username = sender.player.username });
                             this.gameData.host = sender.player.username;
                         }
 
@@ -154,7 +154,7 @@ namespace liveorlive_server {
                 switch (packet) {
                     case SendNewChatMessagePacket sendNewChatMessagePacket:
                         ChatMessage message = this.chat.addMessage(sender.player, sendNewChatMessagePacket.content);
-                        await broadcast(new NewChatMessageSentPacket { message = message });
+                        await this.broadcast(new NewChatMessageSentPacket { message = message });
                         break;
                     case ChatMessagesRequestPacket getChatMessagesPacket:
                         await sender.sendMessage(new ChatMessagesSyncPacket { messages = this.chat.getMessages() });
@@ -186,36 +186,93 @@ namespace liveorlive_server {
                             await this.postActionTransition(isTurnEndingMove);
                         }
                         break;
+                    // TODO each item usage should avoid using syncGameData and should instead tell the client which removes the item itself
+                    case UseSkipItemPacket useSkipItemPacket:
+                        // TODO
+                        break;
                     case UseDoubleDamageItemPacket useDoubleDamageItemPacket:
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
                             if (this.gameData.damageForShot != 1) {
-                                await sender.sendMessage(new ActionFailedPacket { reason = "You've already used a double damage item for this shot!" });
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You've already used a Double Damage item for this shot!" });
                             } else {
-                                // Try to remove the item
                                 if (sender.player.items.Remove(Item.DoubleDamage)) {
-                                    await broadcast(new DoubleDamageItemUsedPacket());
-                                    await this.sendGameLogMessage($"{sender.player.username} has used a double damage item");
+                                    await this.broadcast(new DoubleDamageItemUsedPacket());
+                                    await this.sendGameLogMessage($"{sender.player.username} has used a Double Damage item");
                                     this.gameData.damageForShot = 2;
-                                    await this.syncGameData(); // Sync because the item is gone now
-                                // If it fails and they don't have it
+                                    await this.syncGameData();
                                 } else {
-                                    await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a double damage item! Are you trying to cheat?" });
+                                    await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Double Damage item!" });
                                 }
                             }
                         }
                         break;
+                    case UseCheckBulletItemPacket useCheckBulletItemPacket:
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            if (sender.player.items.Remove(Item.CheckBullet)) {
+                                AmmoType peekResult = this.gameData.peekAmmoFromChamber();
+                                await sender.sendMessage(new CheckBulletItemUsedPacket { result = peekResult });
+                                // TODO don't make this public (CheckBulletResultPacket just to the sender?), make it show alert
+                                await this.sendGameLogMessage($"{sender.player.username} has used a Chamber Check item. It's a {peekResult} round.");
+                                await this.syncGameData();
+                            } else {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Chamber Check item!" });
+                            }
+                        }
+                        break;
+                    case UseRebalancerItemPacket useRebalancerItemPacket:
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            if (sender.player.items.Remove(Item.CheckBullet)) {
+                                int count = this.gameData.addAmmoToChamberAndShuffle(useRebalancerItemPacket.ammoType);
+                                await this.sendGameLogMessage($"{sender.player.username} has used a Rebalancer item and added {count} {useRebalancerItemPacket.ammoType} rounds.");
+                            } else {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Rebalancer item!" });
+                            }
+                        }
+                        break;
+                    case UseAdrenalineItemPacket useAdrenalineItemPacket:
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            if (sender.player.items.Remove(Item.Adrenaline)) {
+                                // Coin flip (generates 0 or 1, and 0 is turned to -1)
+                                int result = new Random().Next(2) * 2 - 1;
+                                await this.broadcast(new AdrenalineItemUsedPacket { result  = result });
+                                await this.sendGameLogMessage($"{sender.player.username} has used an Adrenaline item and {(result > 0 ? "gained" : "lost")} a life");
+                                sender.player.lives += result;
+                                await this.checkAndEliminatePlayer(sender.player);
+                                // This is only here to handle game end (no shot was taken so a round won't be started, and it won't move to the next turn)
+                                await this.postActionTransition(false);
+                                await this.syncGameData();
+                            } else {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You don't have an Adrenaline item!" });
+                            }
+                        }
+                        break;
+                    case UseAddLifeItemPacket useAddLifeItemPacket:
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            if (sender.player.items.Remove(Item.AddLife)) {
+                                await this.broadcast(new AddLifeItemUsedPacket());
+                                await this.sendGameLogMessage($"{sender.player.username} has used a +1 Life item");
+                                sender.player.lives++;
+                                await this.syncGameData();
+                            } else {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a +1 Life item!" });
+                            }
+                        }
+                        break;
+                    case UseQuickshotItemPacket useQuickshotItemPacket:
+                        // TODO
+                        break;
+                    case UseStealItemPacket useStealItemPacket:
+                        // TODO
+                        break;
                     default:
-                        throw new Exception("Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
+                        throw new Exception($"Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
                 }
             }
         }
 
-        // autoShiftTurn is set to false on turn forfeit since it always advances
-        // TODO shooting breaks if someone leaves??
-        // TODO act when player leaves during their turn
         private async Task<bool> shootPlayer(Player shooter, Player target) {
             AmmoType shot = this.gameData.pullAmmoFromChamber();
-            await broadcast(new PlayerShotAtPacket { target = target.username, ammoType = shot, damage = this.gameData.damageForShot });
+            await this.broadcast(new PlayerShotAtPacket { target = target.username, ammoType = shot, damage = this.gameData.damageForShot });
 
             if (shooter != target) {
                 await this.sendGameLogMessage($"{shooter.username} shot {target.username} with a {shot.ToString().ToLower()} round.");
@@ -227,10 +284,7 @@ namespace liveorlive_server {
             // If it's a live round, regardless of who, the turn is over
             if (shot == AmmoType.Live) {
                 target.lives -= this.gameData.damageForShot;
-                if (target.lives <= 0) {
-                    this.gameData.eliminatePlayer(target);
-                    await this.sendGameLogMessage($"{target.username} has been eliminated.");
-                }
+                await this.checkAndEliminatePlayer(target);
             } else if (target == shooter) { // Implied it was a blank round
                 isTurnEndingMove = false;
             }
@@ -241,10 +295,16 @@ namespace liveorlive_server {
             return isTurnEndingMove;
         }
 
+        async public Task checkAndEliminatePlayer(Player player) {
+            if (player.lives <= 0) {
+                this.gameData.eliminatePlayer(player);
+                await this.sendGameLogMessage($"{player.username} has been eliminated.");
+            }
+        }
+
         public async Task postActionTransition(bool isTurnEndingMove) {
             // Check for game end (if there's one player left standing)
             // Make sure the game is still going in case this triggers twice
-            // TODO maybe rethink new turn trigger new round and having double execution stuff
             // TODO game over packet
             if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 && this.gameData.gameStarted) {
                 await this.endGame();
@@ -270,7 +330,7 @@ namespace liveorlive_server {
         public async Task startGame() {
             // Gives items, trigger refresh
             this.gameData.startGame();
-            await broadcast(new GameStartedPacket());
+            await this.broadcast(new GameStartedPacket());
 
             await this.startNewRound();
             await this.nextTurn();
@@ -279,11 +339,11 @@ namespace liveorlive_server {
         public async Task nextTurn() {
             // Send the turn end packet for the previous player (if there was one) automaticaly
             if (this.gameData.currentTurn != null) {
-                await broadcast(new TurnEndedPacket { username = this.gameData.currentTurn });
+                await this.broadcast(new TurnEndedPacket { username = this.gameData.currentTurn });
             }
 
             Player playerForTurn = this.gameData.startNewTurn();
-            await broadcast(new TurnStartedPacket { username = playerForTurn.username });
+            await this.broadcast(new TurnStartedPacket { username = playerForTurn.username });
 
             // If the player left the game, have them shoot themselves and move on
             if (!playerForTurn.inGame) {
@@ -293,7 +353,7 @@ namespace liveorlive_server {
 
         public async Task startNewRound() {
             List<int> ammoCounts = this.gameData.newRound();
-            await broadcast(new NewRoundStartedPacket { 
+            await this.broadcast(new NewRoundStartedPacket { 
                 players = this.gameData.players, 
                 liveCount = ammoCounts[0],
                 blankCount = ammoCounts[1]
@@ -328,13 +388,11 @@ namespace liveorlive_server {
         public Client? getClientForCurrentTurn() {
             Player currentPlayer = this.gameData.getCurrentPlayerForTurn();
             Client currentClient = this.connectedClients.Find(client => client.player == currentPlayer);
-            // TODO make player shoot themselves if client is null (they disconnected)
-            // make sure to check player is not spectator
             return currentClient;
         }
 
         public async Task syncGameData() {
-            await broadcast(new GameDataSyncPacket { gameData = this.gameData });
+            await this.broadcast(new GameDataSyncPacket { gameData = this.gameData });
         }
 
         public async Task sendGameLogMessage(string content) {

@@ -6,16 +6,10 @@
         public override void refresh() {
             this.deck.Clear();
 
-            Random random = new Random();
-            this.liveCount = random.Next(1, 7);
-            this.blankCount = random.Next(1, 7);
-
-            for (int i = 0; i < this.liveCount; i++) {
-                this.deck.Add(AmmoType.Live);
-            }
-            for (int i = 0; i < this.blankCount; i++) {
-                this.deck.Add(AmmoType.Blank);
-            }
+            this.liveCount = 0;
+            this.blankCount = 0;
+            this.addAmmo(AmmoType.Live);
+            this.addAmmo(AmmoType.Blank);
 
             this.shuffle();
         }
@@ -33,6 +27,11 @@
                 this.blankCount += count;
             }
             return count;
+        }
+
+        // Used by check bullet item
+        public AmmoType peek() {
+            return this.deck[this.deck.Count - 1];
         }
     }
 }

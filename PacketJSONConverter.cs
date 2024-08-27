@@ -31,8 +31,8 @@ namespace liveorlive_server {
                     return new UseSkipItemPacket() { target = (string)data["target"] };
                 case "useDoubleDamageItem":
                     return new UseDoubleDamageItemPacket();
-                case "useChamberCheckItem":
-                    return new UseChamberCheckItemPacket();
+                case "useCheckBulletItem":
+                    return new UseCheckBulletItemPacket();
                 case "useRebalancerItem":
                     AmmoType ammoType;
                     bool success = Enum.TryParse((string)data["ammoType"], true, out ammoType);
@@ -40,6 +40,10 @@ namespace liveorlive_server {
                         throw new JsonSerializationException($"Invalid ammo type for useRebalancerItem packet: {data["ammoType"]}");
                     }
                     return new UseRebalancerItemPacket() { ammoType = ammoType };
+                case "useAdrenalineItem":
+                    return new UseAdrenalineItemPacket();
+                case "useAddLifeItem":
+                    return new UseAddLifeItemPacket();
                 case "useQuickshotItem":
                     return new UseQuickshotItemPacket();
                 case "useStealItem":

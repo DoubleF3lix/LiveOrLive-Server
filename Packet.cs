@@ -70,8 +70,8 @@
         public string packetType => "doubleDamageItemUsed";
     }
 
-    public record ChamberCheckItemUsedPacket : ServerPacket {
-        public string packetType => "chamberCheckItemUsed";
+    public record CheckBulletItemUsedPacket : ServerPacket {
+        public string packetType => "checkBulletItemUsed";
         public required AmmoType result;
     }
 
@@ -84,6 +84,10 @@
     public record AdrenalineItemUsedPacket : ServerPacket {
         public string packetType => "adrenalineItemUsed";
         public required int result;
+    }
+
+    public record AddLifeItemUsedPacket : ServerPacket {
+        public string packetType => "addLifeItemUsed";
     }
 
     public record QuickshotItemUsedPacket : ServerPacket {
@@ -154,8 +158,8 @@
         public string packetType => "useDoubleDamageItem";
     }
 
-    public record UseChamberCheckItemPacket : ClientPacket {
-        public string packetType => "useChamberCheckItem";
+    public record UseCheckBulletItemPacket : ClientPacket {
+        public string packetType => "useCheckBulletItem";
     }
 
     public record UseRebalancerItemPacket : ClientPacket {
@@ -165,6 +169,10 @@
 
     public record UseAdrenalineItemPacket : ClientPacket {
         public string packetType => "useAdrenalineItem";
+    }
+
+    public record UseAddLifeItemPacket : ClientPacket {
+        public string packetType => "useAddLifeItem";
     }
 
     public record UseQuickshotItemPacket : ClientPacket {
