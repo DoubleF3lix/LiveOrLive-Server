@@ -52,7 +52,7 @@ namespace liveorlive_server {
                     if (!success) {
                         throw new JsonSerializationException($"Invalid item ID for useItem packet: {data["itemID"]}");
                     }
-                    return new UseStealItemPacket() { item = item, target = (string)data["username"] };
+                    return new UseStealItemPacket() { item = item, target = (string)data["target"] };
                 case "sendNewChatMessage":
                     return new SendNewChatMessagePacket() { content = (string)data["content"] };
                 case "chatMessagesRequest":

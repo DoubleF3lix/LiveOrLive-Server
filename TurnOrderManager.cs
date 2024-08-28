@@ -16,7 +16,6 @@
             this.turnOrder = players.Where(player => player.inGame == true).Select(player => player.username).ToList();
         }
 
-        // TODO this is throwing divide by zero errors
         public void advance() {
             this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.Count;
         }

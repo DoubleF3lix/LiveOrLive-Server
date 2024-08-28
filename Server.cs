@@ -186,9 +186,20 @@ namespace liveorlive_server {
                             await this.postActionTransition(isTurnEndingMove);
                         }
                         break;
-                    // TODO each item usage should avoid using syncGameData and should instead tell the client which removes the item itself
                     case UseSkipItemPacket useSkipItemPacket:
-                        // TODO
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            Player target = this.gameData.getPlayerByUsername(useSkipItemPacket.target);
+                            if (target.isSkipped) {
+                                await sender.sendMessage(new ActionFailedPacket { reason = $"{target.username} has already been skipped!" });
+                            } else {
+                                if (sender.player.items.Remove(Item.SkipPlayerTurn)) {
+                                    await this.broadcast(new SkipItemUsedPacket { target = useSkipItemPacket.target });
+                                    target.isSkipped = true;
+                                } else {
+                                    await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Skip item!" });
+                                }
+                            }
+                        }
                         break;
                     case UseDoubleDamageItemPacket useDoubleDamageItemPacket:
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
@@ -199,7 +210,6 @@ namespace liveorlive_server {
                                     await this.broadcast(new DoubleDamageItemUsedPacket());
                                     await this.sendGameLogMessage($"{sender.player.username} has used a Double Damage item");
                                     this.gameData.damageForShot = 2;
-                                    await this.syncGameData();
                                 } else {
                                     await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Double Damage item!" });
                                 }
@@ -213,7 +223,6 @@ namespace liveorlive_server {
                                 await sender.sendMessage(new CheckBulletItemUsedPacket { result = peekResult });
                                 // TODO don't make this public (CheckBulletResultPacket just to the sender?), make it show alert
                                 await this.sendGameLogMessage($"{sender.player.username} has used a Chamber Check item. It's a {peekResult} round.");
-                                await this.syncGameData();
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Chamber Check item!" });
                             }
@@ -240,7 +249,6 @@ namespace liveorlive_server {
                                 await this.checkAndEliminatePlayer(sender.player);
                                 // This is only here to handle game end (no shot was taken so a round won't be started, and it won't move to the next turn)
                                 await this.postActionTransition(false);
-                                await this.syncGameData();
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "You don't have an Adrenaline item!" });
                             }
@@ -252,7 +260,6 @@ namespace liveorlive_server {
                                 await this.broadcast(new AddLifeItemUsedPacket());
                                 await this.sendGameLogMessage($"{sender.player.username} has used a +1 Life item");
                                 sender.player.lives++;
-                                await this.syncGameData();
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a +1 Life item!" });
                             }
@@ -260,9 +267,16 @@ namespace liveorlive_server {
                         break;
                     case UseQuickshotItemPacket useQuickshotItemPacket:
                         // TODO
+                        await this.broadcast(new QuickshotItemUsedPacket());
                         break;
                     case UseStealItemPacket useStealItemPacket:
-                        // TODO
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            if (sender.player.items.Remove(Item.StealItem)) {
+                                await this.broadcast(new StealItemUsedPacket { target = useStealItemPacket.target, item = useStealItemPacket.item });
+                            } else {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Pickpocket item!" });
+                            }
+                        }
                         break;
                     default:
                         throw new Exception($"Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
@@ -345,6 +359,12 @@ namespace liveorlive_server {
             Player playerForTurn = this.gameData.startNewTurn();
             await this.broadcast(new TurnStartedPacket { username = playerForTurn.username });
 
+            if (playerForTurn.isSkipped) {
+                await this.sendGameLogMessage($"{playerForTurn.username} has been skipped.");
+                playerForTurn.isSkipped = false;
+                await this.nextTurn();
+            }
+
             // If the player left the game, have them shoot themselves and move on
             if (!playerForTurn.inGame) {
                 await this.forfeitTurn(playerForTurn);
@@ -377,8 +397,6 @@ namespace liveorlive_server {
             };
             this.gameData = newGameData;
             await this.syncGameData();
-
-            await Console.Out.WriteLineAsync(JsonConvert.SerializeObject(this.gameData.players));
 
             this.gameLog.clear();
             await this.broadcast(new GameLogMessagesSyncPacket { messages = this.gameLog.getMessages() });
