@@ -230,7 +230,7 @@ namespace liveorlive_server {
                         break;
                     case UseRebalancerItemPacket useRebalancerItemPacket:
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
-                            if (sender.player.items.Remove(Item.CheckBullet)) {
+                            if (sender.player.items.Remove(Item.Rebalancer)) {
                                 int count = this.gameData.addAmmoToChamberAndShuffle(useRebalancerItemPacket.ammoType);
                                 await this.sendGameLogMessage($"{sender.player.username} has used a Rebalancer item and added {count} {useRebalancerItemPacket.ammoType} rounds.");
                             } else {
