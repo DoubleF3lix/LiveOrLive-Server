@@ -179,6 +179,11 @@ namespace liveorlive_server {
                         break;
                     case KickPlayerPacket kickPlayerPacket:
                         if (sender.player.username == this.gameData.host) {
+                            if (sender.player.username == kickPlayerPacket.username) {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "Why are you trying to kick yourself? Sounds painful." });
+                                return;
+                            }
+
                             // Search for the correct client and kick them
                             foreach (Client client in this.connectedClients) {
                                 if (client.player != null && client.player.username == kickPlayerPacket.username) {
