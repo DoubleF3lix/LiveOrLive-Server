@@ -59,6 +59,8 @@ namespace liveorlive_server {
                     return new ChatMessagesRequestPacket();
                 case "gameLogMessagesRequest":
                     return new GameLogMessagesRequestPacket();
+                case "kickPlayer":
+                    return new KickPlayerPacket { username = (string)data["username"] };
                 default:
                     throw new JsonSerializationException($"Invalid packet type (action not valid): {data.ToString()}");
             }

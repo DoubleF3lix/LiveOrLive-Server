@@ -125,6 +125,12 @@
         public required GameLogMessage message;
     }
 
+    public record PlayerKickedPacket : ServerPacket {
+        public string packetType => "playerKicked";
+        public required string username;
+        public required string currentTurn;
+    }
+
     // Client packets
     public record JoinGamePacket : ClientPacket {
         public string packetType => "joinGame";
@@ -196,5 +202,10 @@
 
     public record GameLogMessagesRequestPacket : ClientPacket {
         public string packetType => "gameLogMessagesRequest";
+    }
+
+    public record KickPlayerPacket : ClientPacket {
+        public string packetType => "kickPlayer";
+        public required string username;
     }
 }

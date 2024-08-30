@@ -77,7 +77,7 @@ namespace liveorlive_server {
                     if (this.connectedClients.Count(client => client.player != null) > 0) {
                         Player newHost = this.connectedClients[0].player;
                         this.gameData.host = newHost.username;
-                        await this.broadcast(new HostSetPacket { username = this.gameData.host }); // TODO set host function
+                        await this.broadcast(new HostSetPacket { username = this.gameData.host });
                     } else {
                         this.gameData.host = null;
                     }
@@ -174,6 +174,25 @@ namespace liveorlive_server {
                                 await this.startGame();
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "There needs to be at least 2 players to start a game" });
+                            }
+                        }
+                        break;
+                    case KickPlayerPacket kickPlayerPacket:
+                        if (sender.player.username == this.gameData.host) {
+                            // Search for the correct client and kick them
+                            foreach (Client client in this.connectedClients) {
+                                if (client.player != null && client.player.username == kickPlayerPacket.username) {
+                                    Player target = client.player;
+                                    this.gameData.eliminatePlayer(target); // Needed to handle turn order
+                                    this.gameData.players.Remove(target); // We don't need them anymore
+
+                                    // Send currentTurn to avoid a game data sync (otherwise UI doesn't work properly)
+                                    await this.broadcast(new PlayerKickedPacket { username = client.player.username, currentTurn = this.gameData.currentTurn });
+                                    await this.sendGameLogMessage($"{target.username} has been kicked.");
+
+                                    // Actually DC them, which runs the close-block in ClientConnection and ensures the game ends if it needs to and what not
+                                    await client.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "playerKicked", new CancellationToken());
+                                }
                             }
                         }
                         break;
