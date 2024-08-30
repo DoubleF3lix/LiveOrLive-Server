@@ -222,6 +222,12 @@ namespace liveorlive_server {
                             // TODO turn this into a function so that nextTurn(inGame == false) can copy the logic
                             bool isTurnEndingMove = await this.shootPlayer(sender.player, this.gameData.getPlayerByUsername(shootPlayerPacket.target));
 
+                            // If they had a quickshot item, don't end their turn no matter what
+                            if (this.gameData.quickshotEnabled) {
+                                isTurnEndingMove = false;
+                                this.gameData.quickshotEnabled = false;
+                            }
+
                             await this.postActionTransition(isTurnEndingMove);
                         }
                         break;
@@ -230,13 +236,14 @@ namespace liveorlive_server {
                             Player target = this.gameData.getPlayerByUsername(useSkipItemPacket.target);
                             if (target.isSkipped) {
                                 await sender.sendMessage(new ActionFailedPacket { reason = $"{target.username} has already been skipped!" });
+                                return;
+                            }
+                            if (sender.player.items.Remove(Item.SkipPlayerTurn)) {
+                                await this.broadcast(new SkipItemUsedPacket { target = useSkipItemPacket.target });
+                                await this.sendGameLogMessage($"{target.username} has been skipped by {sender.player.username}");
+                                target.isSkipped = true;
                             } else {
-                                if (sender.player.items.Remove(Item.SkipPlayerTurn)) {
-                                    await this.broadcast(new SkipItemUsedPacket { target = useSkipItemPacket.target });
-                                    target.isSkipped = true;
-                                } else {
-                                    await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Skip item!" });
-                                }
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Skip item!" });
                             }
                         }
                         break;
@@ -244,14 +251,14 @@ namespace liveorlive_server {
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
                             if (this.gameData.damageForShot != 1) {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "You've already used a Double Damage item for this shot!" });
+                                return;
+                            }
+                            if (sender.player.items.Remove(Item.DoubleDamage)) {
+                                await this.broadcast(new DoubleDamageItemUsedPacket());
+                                await this.sendGameLogMessage($"{sender.player.username} has used a Double Damage item");
+                                this.gameData.damageForShot = 2;
                             } else {
-                                if (sender.player.items.Remove(Item.DoubleDamage)) {
-                                    await this.broadcast(new DoubleDamageItemUsedPacket());
-                                    await this.sendGameLogMessage($"{sender.player.username} has used a Double Damage item");
-                                    this.gameData.damageForShot = 2;
-                                } else {
-                                    await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Double Damage item!" });
-                                }
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Double Damage item!" });
                             }
                         }
                         break;
@@ -259,9 +266,9 @@ namespace liveorlive_server {
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
                             if (sender.player.items.Remove(Item.CheckBullet)) {
                                 AmmoType peekResult = this.gameData.peekAmmoFromChamber();
-                                await sender.sendMessage(new CheckBulletItemUsedPacket { result = peekResult });
-                                // TODO don't make this public (CheckBulletResultPacket just to the sender?), make it show alert
-                                await this.sendGameLogMessage($"{sender.player.username} has used a Chamber Check item. It's a {peekResult} round.");
+                                await sender.sendMessage(new CheckBulletItemResultPacket { result = peekResult });
+                                await this.broadcast(new CheckBulletItemUsedPacket());
+                                await this.sendGameLogMessage($"{sender.player.username} has used a Chamber Check item");
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Chamber Check item!" });
                             }
@@ -272,7 +279,7 @@ namespace liveorlive_server {
                             if (sender.player.items.Remove(Item.Rebalancer)) {
                                 int count = this.gameData.addAmmoToChamberAndShuffle(useRebalancerItemPacket.ammoType);
                                 await this.broadcast(new RebalancerItemUsedPacket { ammoType = useRebalancerItemPacket.ammoType, count = count });
-                                await this.sendGameLogMessage($"{sender.player.username} has used a Rebalancer item and added {count} {useRebalancerItemPacket.ammoType} rounds.");
+                                await this.sendGameLogMessage($"{sender.player.username} has used a Rebalancer item and added {count} {useRebalancerItemPacket.ammoType.ToString().ToLower()} rounds");
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Rebalancer item!" });
                             }
@@ -306,13 +313,24 @@ namespace liveorlive_server {
                         }
                         break;
                     case UseQuickshotItemPacket useQuickshotItemPacket:
-                        // TODO
-                        await this.broadcast(new QuickshotItemUsedPacket());
+                        if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
+                            if (this.gameData.quickshotEnabled) {
+                                await sender.sendMessage(new ActionFailedPacket { reason = "You've already used a Quickshot item for this turn!" });
+                                return;
+                            }
+                            await this.broadcast(new QuickshotItemUsedPacket());
+                            await this.sendGameLogMessage($"{sender.player.username} has used a Quickshot item");
+                            this.gameData.quickshotEnabled = true;
+                        } else {
+                            await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Quickshot item!" });
+                        }
                         break;
                     case UseStealItemPacket useStealItemPacket:
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
                             if (sender.player.items.Remove(Item.StealItem)) {
                                 await this.broadcast(new StealItemUsedPacket { target = useStealItemPacket.target, item = useStealItemPacket.item });
+                                // TODO
+                                // await this.sendGameLogMessage($"{sender.player.username} has used a Pickpocket item and stolen {}");
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Pickpocket item!" });
                             }
@@ -416,12 +434,23 @@ namespace liveorlive_server {
 
         public async Task startNewRound() {
             List<int> ammoCounts = this.gameData.newRound();
+
+            await this.sendGameLogMessage($"A new round has started. The chamber has been loaded with {ammoCounts[0]} live round{(ammoCounts[0] != 1 ? "s" : "")} and {ammoCounts[1]} blank{(ammoCounts[1] != 1 ? "s" : "")}.");
+
+            // Auto-apply +1 Life items
+            foreach (Player player in this.gameData.players) {
+                int extraLives = player.items.RemoveAll(item => item == Item.AddLife);
+                player.lives += extraLives;
+                if (extraLives > 0) {
+                    await this.sendGameLogMessage($"{player.username} has been given {extraLives} {(extraLives > 1 ? "lives" : "life")} from items");
+                }
+            }
+
             await this.broadcast(new NewRoundStartedPacket { 
                 players = this.gameData.players, 
                 liveCount = ammoCounts[0],
                 blankCount = ammoCounts[1]
             });
-            await this.sendGameLogMessage($"A new round has started. The chamber has been loaded with {ammoCounts[0]} live round{(ammoCounts[0] != 1 ? "s" : "")} and {ammoCounts[1]} blank{(ammoCounts[1] != 1 ? "s" : "")}.");
         }
 
         public async Task endGame() {

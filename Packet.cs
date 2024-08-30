@@ -71,7 +71,11 @@
     }
 
     public record CheckBulletItemUsedPacket : ServerPacket {
-        public string packetType => "checkBulletItemUsed";
+        public string packetType => "checkBulletItemUsed"; 
+    }
+
+    public record CheckBulletItemResultPacket : ServerPacket {
+        public string packetType => "checkBulletItemResult";
         public required AmmoType result;
     }
 

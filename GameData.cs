@@ -7,6 +7,7 @@
 
         public string currentTurn { get { return this.turnOrderManager.currentTurn; } }
         public int damageForShot = 1;
+        public bool quickshotEnabled = false;
 
         private TurnOrderManager turnOrderManager;
         private ItemDeck itemDeck;
