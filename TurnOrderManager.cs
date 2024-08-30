@@ -1,9 +1,9 @@
 ﻿namespace liveorlive_server {
     public class TurnOrderManager {
-        public string? currentTurn {
+        public string currentTurn {
             get {
                 if (this.currentTurnIndex < 0) {
-                    return null;
+                    return "";
                 }
                 return this.turnOrder[this.currentTurnIndex];
             }

@@ -38,7 +38,7 @@ namespace liveorlive_server {
             }
         }
 
-        public string ToString() {
+        public override string ToString() {
             return $"Client {{ ID = \"{this.ID}\" }}";
         }
     }

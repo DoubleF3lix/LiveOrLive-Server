@@ -65,7 +65,7 @@
         }
 
         public Player getPlayerByUsername(string username) {
-            return this.players.Find(player => player.username == username);
+            return this.players.Find(player => player.username == username) ?? new Player("");
         }
 
         // Remove player from the turnOrder list, adjusting the index backwards if necessary to avoid influencing order

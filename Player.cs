@@ -1,23 +1,17 @@
 ﻿namespace liveorlive_server {
     // Internal server representation of player data
-    public class Player {
+    public class Player(string username, bool inGame = false, bool isSpectator = false) {
         public const int DEFAULT_LIVES = 5;
 
-        public string username;
-        public bool inGame;
-        public bool isSpectator;
+        public string username = username;
+        public bool inGame = inGame;
+        public bool isSpectator = isSpectator;
 
         public int lives = DEFAULT_LIVES;
         public List<Item> items = new List<Item>(4);
         public bool isSkipped = false;
 
         public readonly long joinTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
-
-        public Player(string username, bool inGame = false, bool isSpectator = false) {
-            this.username = username;
-            this.inGame = inGame; // This is necessary since player objects persist after their associated client disconnects
-            this.isSpectator = isSpectator;
-        }
 
         public void setItems(List<Item> items) {
             this.items = items;
@@ -31,8 +25,12 @@
             return this.username == player.username;
         }
 
-        public string ToString() {
+        public override string ToString() {
             return $"Player {{ username = \"{this.username}\", lives = {this.lives}, inGame = {this.inGame}, isSpectator = {this.isSpectator}, isSkipped = {this.isSkipped}, items = [{string.Join(", ", this.items)}] }}";
+        }
+
+        public override int GetHashCode() {
+            throw new NotImplementedException();
         }
     }
 }

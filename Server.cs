@@ -10,9 +10,8 @@ namespace liveorlive_server {
 
         List<Client> connectedClients = new List<Client>();
         GameData gameData = new GameData();
-        public GameLog gameLog = new GameLog();
-        public Chat chat = new Chat();
-        // TODO store GameLog in its own class as well (can still be stored in redux I guess)
+        GameLog gameLog = new GameLog();
+        Chat chat = new Chat();
 
         public Server() {
             this.app = WebApplication.CreateBuilder().Build();
@@ -39,10 +38,15 @@ namespace liveorlive_server {
         // All clients are held in here, and this function only exits when they disconnect
         private async Task ClientConnection(WebSocket webSocket, string ID) {
             // Sometimes, clients can get stuck in a bugged closed state. This will attempt to purge them.
+            // Two phase to avoid looping over while removing it
+            List<Client> clientsToRemove = new List<Client>();
             foreach (Client c in this.connectedClients) {
                 if (c.webSocket.State == WebSocketState.Closed) {
-                    this.connectedClients.Remove(c);
+                    clientsToRemove.Add(c);
                 }
+            }
+            foreach (Client c in clientsToRemove) {
+                this.connectedClients.Remove(c);
             }
 
             Client client = new Client(webSocket, this, ID);
@@ -58,48 +62,53 @@ namespace liveorlive_server {
                     if (result.MessageType == WebSocketMessageType.Text) {
                         // Decode it to an object and pass it off
                         string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-                        ClientPacket packet = JsonConvert.DeserializeObject<ClientPacket>(message, new PacketJSONConverter());
+                        ClientPacket packet = JsonConvert.DeserializeObject<ClientPacket>(message, new PacketJSONConverter())!;
                         await this.packetReceived(client, packet);
                     } else if (result.MessageType == WebSocketMessageType.Close || webSocket.State == WebSocketState.Aborted) {
-                        await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+                        await webSocket.CloseAsync(
+                            result.CloseStatus.HasValue ? result.CloseStatus.Value : WebSocketCloseStatus.InternalServerError,
+                            result.CloseStatusDescription, CancellationToken.None);
                         break;
                     }
                 }
-            } catch (WebSocketException exception) {
+            } catch (WebSocketException) {
                 // Abormal disconnection, finally block has us covered
             } finally {
                 this.connectedClients.Remove(client);
-
-                // If they're the host, try to pass that status on to someone else
-                // If they don't have a player assigned, don't bother
-                if (client.player?.username == this.gameData.host) {
-                    // TODO null error here (client is made null while iterating over it?)
-                    if (this.connectedClients.Count(client => client.player != null) > 0) {
-                        Player newHost = this.connectedClients[0].player;
-                        this.gameData.host = newHost.username;
-                        await this.broadcast(new HostSetPacket { username = this.gameData.host });
-                    } else {
-                        this.gameData.host = null;
-                    }
-                }
-
-                // If the game hasn't started, just remove them entirely
-                if (!this.gameData.gameStarted) {
-                    if (client.player != null) {
-                        this.gameData.players.Remove(this.gameData.getPlayerByUsername(client.player.username));
-                        await this.syncGameData();
-                    }
-                } else {
-                    // If there is only one actively connected player and the game is in progress, end it
-                    if (this.connectedClients.Where(client => client.player != null).Count() <= 1) {
-                        await Console.Out.WriteLineAsync("Everyone has left the game. Ending with no winner.");
-                        await this.endGame();
-                    // Otherwise, if the current turn left, make them forfeit their turn
-                    } else if (client.player != null && client.player.username == this.gameData.currentTurn) {
-                        await this.forfeitTurn(client.player);
-                    }
-                }
+                await this.handleClientDisconnect(client);
                 client.onDisconnect();
+            }
+        }
+
+        public async Task handleClientDisconnect(Client client) {
+            // If they're the host, try to pass that status on to someone else
+            // If they don't have a player assigned, don't bother
+            if (client.player?.username == this.gameData.host) {
+                if (this.connectedClients.Count(client => client.player != null) > 0) {
+                    // Guarunteed to exist due to above condition, safe to use !
+                    Player newHost = this.connectedClients[0].player!;
+                    this.gameData.host = newHost.username;
+                    await this.broadcast(new HostSetPacket { username = this.gameData.host });
+                } else {
+                    this.gameData.host = null;
+                }
+            }
+
+            // If the game hasn't started, just remove them entirely
+            if (!this.gameData.gameStarted) {
+                if (client.player != null) {
+                    this.gameData.players.Remove(this.gameData.getPlayerByUsername(client.player.username));
+                    await this.syncGameData();
+                }
+            } else {
+                // If there is only one actively connected player and the game is in progress, end it
+                if (this.connectedClients.Where(client => client.player != null).Count() <= 1) {
+                    await Console.Out.WriteLineAsync("Everyone has left the game. Ending with no winner.");
+                    await this.endGame();
+                    // Otherwise, if the current turn left, make them forfeit their turn
+                } else if (client.player != null && client.player.username == this.gameData.currentTurn) {
+                    await this.forfeitTurn(client.player);
+                }
             }
         }
 
@@ -185,20 +194,26 @@ namespace liveorlive_server {
                             }
 
                             // Search for the correct client and kick them
-                            foreach (Client client in this.connectedClients) {
-                                if (client.player != null && client.player.username == kickPlayerPacket.username) {
-                                    Player target = client.player;
-                                    this.gameData.eliminatePlayer(target); // Needed to handle turn order
-                                    this.gameData.players.Remove(target); // We don't need them anymore
-
-                                    // Send currentTurn to avoid a game data sync (otherwise UI doesn't work properly)
-                                    await this.broadcast(new PlayerKickedPacket { username = client.player.username, currentTurn = this.gameData.currentTurn });
-                                    await this.sendGameLogMessage($"{target.username} has been kicked.");
-
-                                    // Actually DC them, which runs the close-block in ClientConnection and ensures the game ends if it needs to and what not
-                                    await client.webSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "playerKicked", new CancellationToken());
-                                }
+                            Client? clientToKick = this.connectedClients.Find(client => client.player != null && client.player.username == kickPlayerPacket.username);
+                            // Ignore so we don't crash trying to kick a ghost player
+                            if (clientToKick == null || clientToKick.player == null) {
+                                return;
                             }
+                            Player target = clientToKick.player;
+                            // End this players turn (checks for game end)
+                            await this.postActionTransition(true);
+                            // Eliminate them to handle adjusting turn order (have to do this after otherwise we skip two players)
+                            this.gameData.eliminatePlayer(target);
+                            // Discard the player entirely since they're likely not welcome back
+                            this.gameData.players.Remove(target);
+
+                            // Send currentTurn to avoid a game data sync (otherwise UI doesn't work properly)
+                            await this.broadcast(new PlayerKickedPacket { username = target.username, currentTurn = this.gameData.currentTurn });
+                            await this.sendGameLogMessage($"{target.username} has been kicked.");
+
+                            // Actually disconnected them, which runs handleClientDisconnect
+                            // This removes the client from connectedClients, and checks for game end or host transference (though host transfer should never occur on kick since the host cannot kick themselves)
+                            await clientToKick.webSocket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "playerKicked", new CancellationToken());
                         }
                         break;
                     case ShootPlayerPacket shootPlayerPacket:
@@ -256,6 +271,7 @@ namespace liveorlive_server {
                         if (sender.player == this.gameData.getCurrentPlayerForTurn()) {
                             if (sender.player.items.Remove(Item.Rebalancer)) {
                                 int count = this.gameData.addAmmoToChamberAndShuffle(useRebalancerItemPacket.ammoType);
+                                await this.broadcast(new RebalancerItemUsedPacket { ammoType = useRebalancerItemPacket.ammoType, count = count });
                                 await this.sendGameLogMessage($"{sender.player.username} has used a Rebalancer item and added {count} {useRebalancerItemPacket.ammoType} rounds.");
                             } else {
                                 await sender.sendMessage(new ActionFailedPacket { reason = "You don't have a Rebalancer item!" });
@@ -370,6 +386,9 @@ namespace liveorlive_server {
             this.gameData.startGame();
             await this.broadcast(new GameStartedPacket());
 
+            this.gameLog.clear();
+            await this.broadcast(new GameLogMessagesSyncPacket { messages = this.gameLog.getMessages() });
+
             await this.startNewRound();
             await this.nextTurn();
         }
@@ -407,12 +426,14 @@ namespace liveorlive_server {
 
         public async Task endGame() {
             // There's almost certainly at least one player left when this runs (used to just wipe if there was nobody left, but that situation requires 2 people to DC at once which I don't care enough to account for)
-            string winner = this.gameData.players.Find(player => player.lives >= 1).username;
+            Player? possibleWinner = this.gameData.players.Find(player => player.lives >= 1);
+            string winner = possibleWinner != null ? possibleWinner.username : "nobody";
 
             // Copy any data we may need (like players)
             GameData newGameData = new GameData {
                 players = this.gameData.players.Where(player => player.inGame).Select(player => {
                     player.isSpectator = false;
+                    player.isSkipped = false;
                     player.items.Clear();
                     player.lives = Player.DEFAULT_LIVES;
                     return player;
@@ -422,15 +443,12 @@ namespace liveorlive_server {
             this.gameData = newGameData;
             await this.syncGameData();
 
-            this.gameLog.clear();
-            await this.broadcast(new GameLogMessagesSyncPacket { messages = this.gameLog.getMessages() });
             await this.sendGameLogMessage($"The game has ended. The winner is {winner}.");
         }
 
         public Client? getClientForCurrentTurn() {
             Player currentPlayer = this.gameData.getCurrentPlayerForTurn();
-            Client currentClient = this.connectedClients.Find(client => client.player == currentPlayer);
-            return currentClient;
+            return this.connectedClients.Find(client => client.player == currentPlayer);
         }
 
         public async Task syncGameData() {
