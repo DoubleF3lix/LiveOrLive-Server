@@ -193,6 +193,8 @@
         public string packetType => "useStealItem";
         public required string target;
         public required Item item;
+        public required AmmoType? ammoType;
+        public required string? skipTarget;
     }
 
     public record SendNewChatMessagePacket : ClientPacket {

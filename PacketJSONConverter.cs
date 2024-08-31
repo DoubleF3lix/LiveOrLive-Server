@@ -3,12 +3,15 @@ using Newtonsoft.Json.Linq;
 
 namespace liveorlive_server {
     public class PacketJSONConverter : JsonConverter<ClientPacket> {
-        /*
-        private Player dataToPlayer(JObject data, string nullConditionField) {
-            if (nullConditionField != null && data[nullConditionField] == null) return null;
-            return new Player(null, (string)data["player"]["username"]);
+        public static T? tryParseEnum<T>(string input) where T : struct {
+            if (input == null) {
+                return null;
+            }
+            if (Enum.TryParse(input, true, out T parsedEnum)) {
+                return parsedEnum;
+            }
+            return null;
         }
-        */
 
         public override ClientPacket? ReadJson(JsonReader reader, Type objectType, ClientPacket? existingValue, bool hasExistingValue, JsonSerializer serializer) {
             JObject data = JObject.Load(reader);
@@ -34,12 +37,11 @@ namespace liveorlive_server {
                 case "useCheckBulletItem":
                     return new UseCheckBulletItemPacket();
                 case "useRebalancerItem":
-                    AmmoType ammoType;
-                    bool success = Enum.TryParse((string)data["ammoType"], true, out ammoType);
-                    if (!success) {
+                    AmmoType? ammoType = tryParseEnum<AmmoType>((string)data["ammoType"]);
+                    if (ammoType == null) {
                         throw new JsonSerializationException($"Invalid ammo type for useRebalancerItem packet: {data["ammoType"]}");
                     }
-                    return new UseRebalancerItemPacket() { ammoType = ammoType };
+                    return new UseRebalancerItemPacket() { ammoType = (AmmoType)ammoType };
                 case "useAdrenalineItem":
                     return new UseAdrenalineItemPacket();
                 case "useAddLifeItem":
@@ -47,12 +49,33 @@ namespace liveorlive_server {
                 case "useQuickshotItem":
                     return new UseQuickshotItemPacket();
                 case "useStealItem":
-                    Item item;
-                    success = Enum.TryParse((string)data["item"], true, out item);
-                    if (!success) {
+                    Item? item = tryParseEnum<Item>((string)data["item"]);
+                    if (item == null) {
                         throw new JsonSerializationException($"Invalid item ID for useItem packet: {data["itemID"]}");
                     }
-                    return new UseStealItemPacket() { item = item, target = (string)data["target"] };
+
+                    if (item == Item.Rebalancer && data["ammoType"] == null) {
+                        throw new JsonSerializationException("Stolen item was Rebalancer but ammoType was null");
+                    } else if (item == Item.SkipPlayerTurn && data["skipTarget"] == null) {
+                        throw new JsonSerializationException("Stolen item was SkipPlayerTurn but skipTarget was null");
+                    }
+
+                    // If it's supposed to be set, parse it
+                    ammoType = null;
+                    Console.WriteLine(data["ammoType"]);
+                    if (!string.IsNullOrEmpty((string?)data["ammoType"])) { 
+                        ammoType = tryParseEnum<AmmoType>((string)data["ammoType"]);
+                        if (ammoType == null) {
+                            throw new JsonSerializationException($"Invalid ammo type for useStealItem packet: {data["ammoType"]}");
+                        }
+                    }
+
+                    return new UseStealItemPacket() { 
+                        target = (string)data["target"], 
+                        item = (Item)item,
+                        ammoType = ammoType,
+                        skipTarget = (string)data["skipTarget"]
+                    };
                 case "sendNewChatMessage":
                     return new SendNewChatMessagePacket() { content = (string)data["content"] };
                 case "chatMessagesRequest":

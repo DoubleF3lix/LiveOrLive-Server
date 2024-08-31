@@ -65,8 +65,9 @@
             return this.players.Where(player => player.inGame == true && player.isSpectator == false).ToList();
         }
 
-        public Player getPlayerByUsername(string username) {
-            return this.players.Find(player => player.username == username) ?? new Player("");
+        public Player? getPlayerByUsername(string? username) {
+            if (username == null) return null;
+            return this.players.Find(player => player.username == username);
         }
 
         // Remove player from the turnOrder list, adjusting the index backwards if necessary to avoid influencing order
