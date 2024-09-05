@@ -1,5 +1,8 @@
 ﻿namespace liveorlive_server {
     public class GameData {
+        public const bool LOOTING = true;
+        public const bool VENGEANCE = false;
+
         public List<Player> players = [];
         public string? host = null;
         public bool gameStarted = false;

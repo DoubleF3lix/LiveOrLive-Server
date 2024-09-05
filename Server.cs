@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.WebSockets;
-using System.Reflection;
 using System.Text;
 using Newtonsoft.Json;
 
@@ -454,7 +453,17 @@ namespace liveorlive_server {
             // If it's a live round, regardless of who, the turn is over
             if (shot == AmmoType.Live) {
                 target.lives -= this.gameData.damageForShot;
-                await this.checkAndEliminatePlayer(target);
+                bool wasEliminated = await this.checkAndEliminatePlayer(target);
+                if (wasEliminated && GameData.LOOTING && shooter != target) {
+                    shooter.items.AddRange(target.items);
+                    await this.syncGameData(); // TODO do this proper... somehow
+                } else if (wasEliminated && GameData.VENGEANCE && shooter != target) {
+                    if (target.isSkipped) {
+                        // Should probably be a different packet, but this is fine
+                        await this.broadcast(new SkipItemUsedPacket { target = shooter.username });
+                        shooter.isSkipped = true;
+                    }
+                }
             } else if (target == shooter) { // Implied it was a blank round
                 isTurnEndingMove = false;
             }
@@ -471,11 +480,13 @@ namespace liveorlive_server {
             return isTurnEndingMove;
         }
 
-        private async Task checkAndEliminatePlayer(Player player) {
+        private async Task<bool> checkAndEliminatePlayer(Player player) {
             if (player.lives <= 0) {
                 this.gameData.eliminatePlayer(player);
                 await this.sendGameLogMessage($"{player.username} has been eliminated.");
+                return true;
             }
+            return false;
         }
 
         private async Task postActionTransition(bool isTurnEndingMove) {
