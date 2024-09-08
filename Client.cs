@@ -33,9 +33,6 @@ namespace liveorlive_server {
 
         public void onDisconnect() {
             Console.WriteLine($"Connection closed with {this.ToString()}");
-            if (this.player != null) {
-                this.player.inGame = false;
-            }
         }
 
         public override string ToString() {

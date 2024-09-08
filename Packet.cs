@@ -23,6 +23,11 @@
         public required string reason;
     }
 
+    public record PlayerLeftPacket : ServerPacket {
+        public string packetType => "playerLeft";
+        public required string username;
+    }
+
     public record HostSetPacket : ServerPacket {
         public string packetType => "hostSet";
         public required string username;

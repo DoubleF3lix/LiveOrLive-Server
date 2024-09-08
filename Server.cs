@@ -79,15 +79,19 @@ namespace liveorlive_server {
                 // Abormal disconnection, finally block has us covered
             } finally {
                 this.connectedClients.Remove(client);
-                await this.handleClientDisconnect(client);
+                await this.handlePlayerDisconnect(client);
                 client.onDisconnect();
             }
         }
 
-        private async Task handleClientDisconnect(Client client) {
+        private async Task handlePlayerDisconnect(Client client) {
+            if (client.player == null) {
+                return;
+            }
+
             // If they're the host, try to pass that status on to someone else
             // If they don't have a player assigned, don't bother
-            if (client.player?.username == this.gameData.host) {
+            if (client.player.username == this.gameData.host) {
                 if (this.connectedClients.Any(client => client.player != null)) {
                     // Guarunteed to exist due to above condition, safe to use !
                     Player newHost = this.connectedClients[0].player!;
@@ -98,18 +102,19 @@ namespace liveorlive_server {
                 }
             }
 
+            // Tell everyone they left for UI updating purposes
+            await this.broadcast(new PlayerLeftPacket { username = client.player.username });
+            client.player.inGame = false;
+
             // If the game hasn't started, just remove them entirely
             if (!this.gameData.gameStarted) {
-                if (client.player != null) {
-                    this.gameData.players.Remove(this.gameData.getPlayerByUsername(client.player.username));
-                    await this.syncGameData();
-                }
+                this.gameData.players.Remove(this.gameData.getPlayerByUsername(client.player.username));
             } else {
                 // If there is only one actively connected player and the game is in progress, end it
                 if (this.connectedClients.Where(client => client.player != null).Count() <= 1) {
                     await Console.Out.WriteLineAsync("Everyone has left the game. Ending with no winner.");
                     await this.endGame();
-                    // Otherwise, if the current turn left, make them forfeit their turn
+                // Otherwise, if the current turn left, make them forfeit their turn
                 } else if (client.player != null && client.player.username == this.gameData.currentTurn) {
                     await this.forfeitTurn(client.player);
                 }
