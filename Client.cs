@@ -8,7 +8,7 @@ namespace liveorlive_server {
         public readonly Server server;
 
         public readonly string ID;
-        public Player player = new("DUMMY_PLAYER_WITH_NAME_TOO_LONG_FOR_A_PLAYER_TO_USE");
+        public Player? player = null;
 
         public Client(WebSocket webSocket, Server server, string ID) {
             this.webSocket = webSocket;

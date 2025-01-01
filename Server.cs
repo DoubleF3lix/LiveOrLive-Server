@@ -125,7 +125,7 @@ namespace liveorlive_server {
         }
 
         private async Task PacketReceived(Client sender, ClientPacket packet) {
-            await Console.Out.WriteLineAsync($"Received packet from {sender.ToString()}: {packet}");
+            await Console.Out.WriteLineAsync($"Received packet from {sender}: {packet}");
             // Before the player is in the game but after they're connected
             if (sender.player == null) {
                 switch (packet) {
@@ -289,6 +289,11 @@ namespace liveorlive_server {
         }
 
         private async Task<bool> UseSkipItem(Client sender, Player? target, bool checkForItem = true) {
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
             if (target == null) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "Invalid player for steal item target" });
                 return false;
@@ -310,6 +315,11 @@ namespace liveorlive_server {
         }
 
         private async Task<bool> UseDoubleDamageItem(Client sender, bool checkForItem = true) {
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
             if (this.gameData.damageForShot != 1) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "You've already used a Double Damage item for this shot!" });
                 return false;
@@ -326,6 +336,11 @@ namespace liveorlive_server {
         }
 
         private async Task<bool> UseCheckBulletItem(Client sender, bool checkForItem = true) {
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
             if (!checkForItem || sender.player.items.Remove(Item.CheckBullet)) {
                 AmmoType peekResult = this.gameData.PeekAmmoFromChamber();
                 await sender.SendMessage(new CheckBulletItemResultPacket { result = peekResult });
@@ -339,6 +354,11 @@ namespace liveorlive_server {
         }
 
         private async Task<bool> UseRebalancerItem(Client sender, AmmoType ammoType, bool checkForItem = true) {
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
             if (!checkForItem || sender.player.items.Remove(Item.Rebalancer)) {
                 int count = this.gameData.AddAmmoToChamberAndShuffle(ammoType);
                 await this.Broadcast(new RebalancerItemUsedPacket { ammoType = ammoType, count = count });
@@ -351,6 +371,11 @@ namespace liveorlive_server {
         }
 
         private async Task<bool> UseAdrenalineItem(Client sender, bool checkForItem = true) {
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
             if (!checkForItem || sender.player.items.Remove(Item.Adrenaline)) {
                 int result = new Random().Next(2) * 2 - 1; // Coin flip
                 await this.Broadcast(new AdrenalineItemUsedPacket { result = result });
@@ -370,6 +395,11 @@ namespace liveorlive_server {
 
         // Can't be stolen, don't need to worry about not checking
         private async Task<bool> UseAddLifeItem(Client sender) {
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
             if (sender.player.items.Remove(Item.AddLife)) {
                 await this.Broadcast(new AddLifeItemUsedPacket());
                 await this.SendGameLogMessage($"{sender.player.username} has used a +1 Life item");
@@ -382,6 +412,16 @@ namespace liveorlive_server {
         }
 
         private async Task<bool> UseQuickshotItem(Client sender, bool checkForItem = true) {
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
             if (this.gameData.quickshotEnabled) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "You've already used a Quickshot item for this turn!" });
                 return true;
@@ -399,6 +439,11 @@ namespace liveorlive_server {
 
         // Can't be stolen, don't need to worry about not checking
         private async Task<bool> UseStealItem(Client sender, Player? target, Item item, AmmoType? ammoType, string? skipTargetUsername) {
+            if (sender.player == null) {
+                await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
+                return false;
+            }
+
             if (target == null) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "Invalid player for steal item target" });
                 return false;
