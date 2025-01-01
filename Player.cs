@@ -2,18 +2,20 @@
     // Internal server representation of player data
     public class Player(string username, bool inGame = false, bool isSpectator = false) {
         public const int DEFAULT_LIVES = 5;
+        // TODO random amount of items per round
+        public const int ITEM_COUNT = 4;
 
         public string username = username;
         public bool inGame = inGame;
         public bool isSpectator = isSpectator;
 
         public int lives = DEFAULT_LIVES;
-        public List<Item> items = new List<Item>(4);
+        public List<Item> items = new List<Item>(ITEM_COUNT);
         public bool isSkipped = false;
 
         public readonly long joinTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
 
-        public void setItems(List<Item> items) {
+        public void SetItems(List<Item> items) {
             this.items = items;
         }
 

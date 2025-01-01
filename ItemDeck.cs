@@ -10,7 +10,7 @@
         }
 
         // Remove all the old items and repopulate as needed for the player count
-        public override void refresh() {
+        public override void Refresh() {
             this.deck.Clear();
 
             int uniqueItemCount = Enum.GetNames(typeof(Item)).Length;
@@ -20,18 +20,18 @@
                     this.deck.Add((Item)i);
                 }
             }
-            this.shuffle();
+            this.Shuffle();
         }
 
         // Handles refreshing the list
-        public List<Item> getSetForPlayer() {
+        public List<Item> GetSetForPlayer() {
             if (this.deck.Count < 4) {
-                this.refresh();
+                this.Refresh();
             }
 
             List<Item> output = new List<Item>(4);
             for (int i = 0; i < 4; i++) {
-                output.Add(this.pop());
+                output.Add(this.Pop());
             }
             return output;
         }

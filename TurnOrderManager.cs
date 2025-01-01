@@ -12,15 +12,15 @@
         private List<string> turnOrder = []; // Usernames
         private int currentTurnIndex = -1;
 
-        public void populate(List<Player> players) {
+        public void Populate(List<Player> players) {
             this.turnOrder = players.Where(player => player.inGame == true).Select(player => player.username).ToList();
         }
 
-        public void advance() {
+        public void Advance() {
             this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.Count;
         }
 
-        public void eliminatePlayer(string username) {
+        public void EliminatePlayer(string username) {
             int index = this.turnOrder.IndexOf(username);
             if (index != -1) {
                 this.turnOrder.RemoveAt(index);

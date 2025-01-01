@@ -1,20 +1,20 @@
 ﻿namespace liveorlive_server {
     public class GameData {
         public const bool LOOTING = true;
-        public const bool VENGEANCE = false;
+        public const bool VENGEANCE = true;
 
         public List<Player> players = [];
         public string? host = null;
         public bool gameStarted = false;
         public readonly string gameID = Guid.NewGuid().ToString();
 
-        public string currentTurn { get { return this.turnOrderManager.currentTurn; } }
+        public string CurrentTurn { get { return this.turnOrderManager.currentTurn; } }
         public int damageForShot = 1;
         public bool quickshotEnabled = false;
 
-        private TurnOrderManager turnOrderManager;
-        private ItemDeck itemDeck;
-        private AmmoDeck ammoDeck;
+        private readonly TurnOrderManager turnOrderManager;
+        private readonly ItemDeck itemDeck;
+        private readonly AmmoDeck ammoDeck;
 
         public GameData() {
             this.turnOrderManager = new TurnOrderManager();
@@ -22,61 +22,62 @@
             this.ammoDeck = new AmmoDeck();
         }
 
-        public void startGame() {
-            this.turnOrderManager.populate(this.players);
+        public void StartGame() {
+            this.turnOrderManager.Populate(this.players);
             this.gameStarted = true;
         }
 
-        public List<int> newRound() {
-            this.itemDeck.refresh();
+        public List<int> NewRound() {
+            this.itemDeck.Refresh();
             // Give all players their items
             foreach (Player player in this.players) {
-                player.setItems(this.itemDeck.getSetForPlayer());
+                player.SetItems(this.itemDeck.GetSetForPlayer());
             }
-            this.ammoDeck.refresh(); // Load the chamber
-            return new List<int> { this.ammoDeck.liveCount, this.ammoDeck.blankCount }; // Used in the outgoing packet
+            this.ammoDeck.Refresh(); // Load the chamber
+            return new List<int> { this.ammoDeck.LiveCount, this.ammoDeck.BlankCount }; // Used in the outgoing packet
         }
 
-        public Player startNewTurn() {
-            this.turnOrderManager.advance();
-            return this.getCurrentPlayerForTurn();
+        public Player StartNewTurn() {
+            this.turnOrderManager.Advance();
+            // Guarunteed to not return a null unless something has gone horribly wrong
+            return this.GetCurrentPlayerForTurn()!;
         }
 
-        public AmmoType pullAmmoFromChamber() {
-            return this.ammoDeck.pop();
+        public AmmoType PullAmmoFromChamber() {
+            return this.ammoDeck.Pop();
         }
 
-        public int getAmmoInChamberCount() {
+        public int GetAmmoInChamberCount() {
             return this.ammoDeck.Count;
         }
 
-        public AmmoType peekAmmoFromChamber() {
-            return this.ammoDeck.peek();
+        public AmmoType PeekAmmoFromChamber() {
+            return this.ammoDeck.Peek();
         }
 
-        public int addAmmoToChamberAndShuffle(AmmoType type) {
-            int count = this.ammoDeck.addAmmo(type);
-            this.ammoDeck.shuffle();
+        public int AddAmmoToChamberAndShuffle(AmmoType type) {
+            int count = this.ammoDeck.AddAmmo(type);
+            this.ammoDeck.Shuffle();
             return count;
         }
 
-        public Player getCurrentPlayerForTurn() {
-            return this.getPlayerByUsername(this.turnOrderManager.currentTurn);
+        public Player? GetCurrentPlayerForTurn() {
+            return this.GetPlayerByUsername(this.turnOrderManager.currentTurn);
         }
 
-        public List<Player> getActivePlayers() {
+        public List<Player> GetActivePlayers() {
             return this.players.Where(player => player.inGame == true && player.isSpectator == false).ToList();
         }
 
-        public Player? getPlayerByUsername(string? username) {
+        public Player? GetPlayerByUsername(string? username) {
             if (username == null) return null;
             return this.players.Find(player => player.username == username);
         }
 
         // Remove player from the turnOrder list, adjusting the index backwards if necessary to avoid influencing order
         // Also marks as spectator
-        public void eliminatePlayer(Player player) {
-            this.turnOrderManager.eliminatePlayer(player.username);
+        public void EliminatePlayer(Player player) {
+            this.turnOrderManager.EliminatePlayer(player.username);
             player.isSpectator = true;
             player.lives = 0;
         }

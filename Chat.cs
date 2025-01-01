@@ -3,19 +3,19 @@
 namespace liveorlive_server {
     public class Chat {
         [JsonProperty]
-        List<ChatMessage> messages = new List<ChatMessage>();
+        readonly List<ChatMessage> messages = [];
 
-        public void addMessage(ChatMessage message) {
+        public void AddMessage(ChatMessage message) {
             this.messages.Add(message);
         }
 
-        public ChatMessage addMessage(Player author, string content) {
+        public ChatMessage AddMessage(Player author, string content) {
             ChatMessage newMessage = new ChatMessage(author, content);
             this.messages.Add(newMessage);
             return newMessage;
         }
 
-        public List<ChatMessage> getMessages() {  
+        public List<ChatMessage> GetMessages() {  
             return this.messages; 
         }
     }
