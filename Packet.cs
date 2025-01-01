@@ -1,6 +1,7 @@
 ﻿namespace liveorlive_server {
     public interface IPacket {
-        public string PacketType { get; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Lowercase for consistency with JSON")]
+        public string packetType { get; }
     }
 
     // Just to help classify stuff (Server comes from the server, client comes from client)
@@ -9,193 +10,193 @@
 
     // Server packets
     public record GameDataSyncPacket : IServerPacket {
-        public string PacketType => "gameDataSync";
+        public string packetType => "gameDataSync";
         public required GameData gameData;
     }
 
     public record PlayerJoinedPacket : IServerPacket {
-        public string PacketType => "playerJoined";
+        public string packetType => "playerJoined";
         public required Player player;
     }
 
     public record PlayerJoinRejectedPacket : IServerPacket {
-        public string PacketType => "playerJoinRejected";
+        public string packetType => "playerJoinRejected";
         public required string reason;
     }
 
     public record PlayerLeftPacket : IServerPacket {
-        public string PacketType => "playerLeft";
+        public string packetType => "playerLeft";
         public required string username;
     }
 
     public record HostSetPacket : IServerPacket {
-        public string PacketType => "hostSet";
+        public string packetType => "hostSet";
         public required string username;
     }
 
     public record GameStartedPacket : IServerPacket {
-        public string PacketType => "gameStarted";
+        public string packetType => "gameStarted";
     }
 
     public record NewRoundStartedPacket : IServerPacket {
-        public string PacketType => "newRoundStarted";
+        public string packetType => "newRoundStarted";
         public required List<Player> players;
         public required int liveCount;
         public required int blankCount;
     }
 
     public record TurnStartedPacket : IServerPacket {
-        public string PacketType => "turnStarted";
+        public string packetType => "turnStarted";
         public required string username;
     }
 
     public record TurnEndedPacket : IServerPacket {
-        public string PacketType => "turnEnded";
+        public string packetType => "turnEnded";
         public required string username;
     }
 
     public record ActionFailedPacket : IServerPacket {
-        public string PacketType => "actionFailed";
+        public string packetType => "actionFailed";
         public required string reason;
     }
 
     public record PlayerShotAtPacket : IServerPacket {
-        public string PacketType => "playerShotAt";
+        public string packetType => "playerShotAt";
         public required string target;
         public required AmmoType ammoType;
         public required int damage; // Maybe derive ammoType from the damage (0 = blank?)
     }
 
     public record SkipItemUsedPacket : IServerPacket {
-        public string PacketType => "skipItemUsed";
+        public string packetType => "skipItemUsed";
         public required string target;
     }
 
     public record DoubleDamageItemUsedPacket : IServerPacket {
-        public string PacketType => "doubleDamageItemUsed";
+        public string packetType => "doubleDamageItemUsed";
     }
 
     public record CheckBulletItemUsedPacket : IServerPacket {
-        public string PacketType => "checkBulletItemUsed"; 
+        public string packetType => "checkBulletItemUsed"; 
     }
 
     public record CheckBulletItemResultPacket : IServerPacket {
-        public string PacketType => "checkBulletItemResult";
+        public string packetType => "checkBulletItemResult";
         public required AmmoType result;
     }
 
     public record RebalancerItemUsedPacket : IServerPacket {
-        public string PacketType => "rebalancerItemUsed";
+        public string packetType => "rebalancerItemUsed";
         public required AmmoType ammoType;
         public required int count;
     }
 
     public record AdrenalineItemUsedPacket : IServerPacket {
-        public string PacketType => "adrenalineItemUsed";
+        public string packetType => "adrenalineItemUsed";
         public required int result;
     }
 
     public record AddLifeItemUsedPacket : IServerPacket {
-        public string PacketType => "addLifeItemUsed";
+        public string packetType => "addLifeItemUsed";
     }
 
     public record QuickshotItemUsedPacket : IServerPacket {
-        public string PacketType => "quickshotItemUsed";
+        public string packetType => "quickshotItemUsed";
     }
 
     public record StealItemUsedPacket : IServerPacket {
-        public string PacketType => "stealItemUsed";
+        public string packetType => "stealItemUsed";
         public required string target;
         public required Item item;
     }
 
     public record NewChatMessageSentPacket : IServerPacket {
-        public string PacketType => "newChatMessageSent";
+        public string packetType => "newChatMessageSent";
         public required ChatMessage message;
     }
 
     public record ChatMessagesSyncPacket : IServerPacket {
-        public string PacketType => "chatMessagesSync";
+        public string packetType => "chatMessagesSync";
         public required List<ChatMessage> messages;
     }
 
     public record GameLogMessagesSyncPacket : IServerPacket {
-        public string PacketType => "gameLogMessagesSync";
+        public string packetType => "gameLogMessagesSync";
         public required List<GameLogMessage> messages;
     }
 
     public record ShowAlertPacket : IServerPacket {
-        public string PacketType => "showAlert";
+        public string packetType => "showAlert";
         public required string content;
     }
 
     public record NewGameLogMessageSentPacket : IServerPacket {
-        public string PacketType => "newGameLogMessageSent";
+        public string packetType => "newGameLogMessageSent";
         public required GameLogMessage message;
     }
 
     public record PlayerKickedPacket : IServerPacket {
-        public string PacketType => "playerKicked";
+        public string packetType => "playerKicked";
         public required string username;
         public required string currentTurn;
     }
 
     // Client packets
     public record JoinGamePacket : IClientPacket {
-        public string PacketType => "joinGame";
+        public string packetType => "joinGame";
         public required string username;
     }
 
     public record SetHostPacket : IClientPacket {
-        public string PacketType => "setHost";
+        public string packetType => "setHost";
         public required string username;
     }
 
     public record GameDataRequestPacket : IClientPacket {
-        public string PacketType => "gameDataRequest";
+        public string packetType => "gameDataRequest";
     }
 
     public record StartGamePacket : IClientPacket {
-        public string PacketType => "startGame";
+        public string packetType => "startGame";
     }
 
     public record ShootPlayerPacket : IClientPacket {
-        public string PacketType => "shootPlayer";
+        public string packetType => "shootPlayer";
         public required string target;
     }
 
     public record UseSkipItemPacket : IClientPacket {
-        public string PacketType => "useSkipItem";
+        public string packetType => "useSkipItem";
         public required string target;
     }
 
     public record UseDoubleDamageItemPacket : IClientPacket {
-        public string PacketType => "useDoubleDamageItem";
+        public string packetType => "useDoubleDamageItem";
     }
 
     public record UseCheckBulletItemPacket : IClientPacket {
-        public string PacketType => "useCheckBulletItem";
+        public string packetType => "useCheckBulletItem";
     }
 
     public record UseRebalancerItemPacket : IClientPacket {
-        public string PacketType => "useRebalancerItem";
+        public string packetType => "useRebalancerItem";
         public required AmmoType ammoType;
     }
 
     public record UseAdrenalineItemPacket : IClientPacket {
-        public string PacketType => "useAdrenalineItem";
+        public string packetType => "useAdrenalineItem";
     }
 
     public record UseAddLifeItemPacket : IClientPacket {
-        public string PacketType => "useAddLifeItem";
+        public string packetType => "useAddLifeItem";
     }
 
     public record UseQuickshotItemPacket : IClientPacket {
-        public string PacketType => "useQuickshotItem";
+        public string packetType => "useQuickshotItem";
     }
 
     public record UseStealItemPacket : IClientPacket {
-        public string PacketType => "useStealItem";
+        public string packetType => "useStealItem";
         public required string target;
         public required Item item;
         public required AmmoType? ammoType;
@@ -203,20 +204,20 @@
     }
 
     public record SendNewChatMessagePacket : IClientPacket {
-        public string PacketType => "sendNewChatMessage";
+        public string packetType => "sendNewChatMessage";
         public required string content;
     }
 
     public record ChatMessagesRequestPacket : IClientPacket {
-        public string PacketType => "chatMessagesRequest";
+        public string packetType => "chatMessagesRequest";
     }
 
     public record GameLogMessagesRequestPacket : IClientPacket {
-        public string PacketType => "gameLogMessagesRequest";
+        public string packetType => "gameLogMessagesRequest";
     }
 
     public record KickPlayerPacket : IClientPacket {
-        public string PacketType => "kickPlayer";
+        public string packetType => "kickPlayer";
         public required string username;
     }
 }

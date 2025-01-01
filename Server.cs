@@ -169,7 +169,7 @@ namespace liveorlive_server {
 
                         break;
                     default:
-                        throw new Exception($"Invalid packet type (without player instance) of \"{packet.PacketType}\". Did you forget to implement this?");
+                        throw new Exception($"Invalid packet type (without player instance) of \"{packet.packetType}\". Did you forget to implement this?");
                    }
             } else {
                 switch (packet) {
@@ -283,7 +283,7 @@ namespace liveorlive_server {
                         }
                         break;
                     default:
-                        throw new Exception($"Invalid packet type (with player instance) of \"{packet.PacketType}\". Did you forget to implement this?");
+                        throw new Exception($"Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
                 }
             }
         }
