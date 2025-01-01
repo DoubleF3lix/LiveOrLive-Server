@@ -1,6 +1,6 @@
 ﻿namespace liveorlive_server {
     public abstract class Deck<T> {
-        protected List<T> deck = new List<T>();
+        protected List<T> deck = [];
 
         public abstract void Refresh();
 
@@ -8,17 +8,15 @@
 
         // Fisher-Yates
         public void Shuffle() {
-            Random random = new Random();
+            Random random = new();
             for (int i = 0; i < this.deck.Count; i++) {
                 int j = random.Next(i, this.deck.Count);
-                T temp = this.deck[i];
-                this.deck[i] = this.deck[j];
-                this.deck[j] = temp;
+                (this.deck[j], this.deck[i]) = (this.deck[i], this.deck[j]);
             }
         }
 
         public T Pop() {
-            T q = this.deck[this.deck.Count - 1];
+            T q = this.deck[^1];
             this.deck.RemoveAt(this.deck.Count - 1); // Removing from the end should be faster, but it really doesn't matter
             return q;
         }

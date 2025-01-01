@@ -2,7 +2,7 @@
 using Newtonsoft.Json.Linq;
 
 namespace liveorlive_server {
-    public class PacketJSONConverter : JsonConverter<ClientPacket> {
+    public class PacketJSONConverter : JsonConverter<IClientPacket> {
         public static T? TryParseEnum<T>(string input) where T : struct {
             if (input == null) {
                 return null;
@@ -13,7 +13,7 @@ namespace liveorlive_server {
             return null;
         }
 
-        public override ClientPacket? ReadJson(JsonReader reader, Type objectType, ClientPacket? existingValue, bool hasExistingValue, JsonSerializer serializer) {
+        public override IClientPacket? ReadJson(JsonReader reader, Type objectType, IClientPacket? existingValue, bool hasExistingValue, JsonSerializer serializer) {
             JObject data = JObject.Load(reader);
             string action = data.Value<string>("packetType") ?? throw new JsonSerializationException("Missing packetType field");
 
@@ -84,7 +84,7 @@ namespace liveorlive_server {
 
         public override bool CanWrite { get { return false; } }
 
-        public override void WriteJson(JsonWriter writer, ClientPacket? value, JsonSerializer serializer) {
+        public override void WriteJson(JsonWriter writer, IClientPacket? value, JsonSerializer serializer) {
             throw new NotImplementedException();
         }
     }

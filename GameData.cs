@@ -8,7 +8,7 @@
         public bool gameStarted = false;
         public readonly string gameID = Guid.NewGuid().ToString();
 
-        public string CurrentTurn { get { return this.turnOrderManager.currentTurn; } }
+        public string CurrentTurn { get { return this.turnOrderManager.CurrentTurn; } }
         public int damageForShot = 1;
         public bool quickshotEnabled = false;
 
@@ -34,7 +34,7 @@
                 player.SetItems(this.itemDeck.GetSetForPlayer());
             }
             this.ammoDeck.Refresh(); // Load the chamber
-            return new List<int> { this.ammoDeck.LiveCount, this.ammoDeck.BlankCount }; // Used in the outgoing packet
+            return [this.ammoDeck.LiveCount, this.ammoDeck.BlankCount]; // Used in the outgoing packet
         }
 
         public Player StartNewTurn() {
@@ -62,7 +62,7 @@
         }
 
         public Player? GetCurrentPlayerForTurn() {
-            return this.GetPlayerByUsername(this.turnOrderManager.currentTurn);
+            return this.GetPlayerByUsername(this.turnOrderManager.CurrentTurn);
         }
 
         public List<Player> GetActivePlayers() {

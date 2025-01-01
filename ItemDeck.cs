@@ -1,13 +1,9 @@
 ﻿namespace liveorlive_server {
-    public class ItemDeck : Deck<Item> {
-        int multiplier;
-
-        public ItemDeck(int playerCount) {
-            // Need 4 of each item at minimum (7 items total), which is enough for 6 people
-            this.multiplier = ((playerCount - 1) / 6) + 1; // Requires floor div, which is present here
-
-            // Don't need to refresh since it's done at the start of each round anyway
-        }
+    public class ItemDeck(int playerCount) : Deck<Item> {
+        // Need 4 of each item at minimum (7 items total), which is enough for 6 people
+        // Requires floor div, which is present here
+        // Don't need to refresh since it's done at the start of each round anyway
+        readonly int multiplier = ((playerCount - 1) / 6) + 1;
 
         // Remove all the old items and repopulate as needed for the player count
         public override void Refresh() {
@@ -29,7 +25,7 @@
                 this.Refresh();
             }
 
-            List<Item> output = new List<Item>(4);
+            List<Item> output = new(4);
             for (int i = 0; i < 4; i++) {
                 output.Add(this.Pop());
             }

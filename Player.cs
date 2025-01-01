@@ -10,7 +10,7 @@
         public bool isSpectator = isSpectator;
 
         public int lives = DEFAULT_LIVES;
-        public List<Item> items = new List<Item>(ITEM_COUNT);
+        public List<Item> items = new(ITEM_COUNT);
         public bool isSkipped = false;
 
         public readonly long joinTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;

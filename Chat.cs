@@ -10,7 +10,7 @@ namespace liveorlive_server {
         }
 
         public ChatMessage AddMessage(Player author, string content) {
-            ChatMessage newMessage = new ChatMessage(author, content);
+            ChatMessage newMessage = new(author, content);
             this.messages.Add(newMessage);
             return newMessage;
         }

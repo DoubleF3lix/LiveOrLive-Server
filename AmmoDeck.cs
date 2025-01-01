@@ -15,7 +15,7 @@
         }
 
         public int AddAmmo(AmmoType type) {
-            Random random = new Random();
+            Random random = new();
             int count = random.Next(1, 7);
             for (int i = 0; i < count; i++) {
                 this.deck.Add(type);
@@ -31,7 +31,7 @@
 
         // Used by check bullet item
         public AmmoType Peek() {
-            return this.deck[this.deck.Count - 1];
+            return this.deck[^1]; // From the end
         }
     }
 }

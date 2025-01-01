@@ -39,7 +39,7 @@ namespace liveorlive_server {
         private async Task ClientConnection(WebSocket webSocket, string ID) {
             // Sometimes, clients can get stuck in a bugged closed state. This will attempt to purge them.
             // Two phase to avoid looping over while removing it
-            List<Client> clientsToRemove = new List<Client>();
+            List<Client> clientsToRemove = [];
             foreach (Client c in this.connectedClients) {
                 if (c.webSocket.State == WebSocketState.Closed) {
                     clientsToRemove.Add(c);
@@ -49,7 +49,7 @@ namespace liveorlive_server {
                 this.connectedClients.Remove(c);
             }
 
-            Client client = new Client(webSocket, this, ID);
+            Client client = new(webSocket, this, ID);
             this.connectedClients.Add(client);
 
             // Constantly check for messages
@@ -63,14 +63,14 @@ namespace liveorlive_server {
                         // Decode it to an object and pass it off
                         string message = Encoding.UTF8.GetString(buffer, 0, result.Count);
                         try {
-                            ClientPacket packet = JsonConvert.DeserializeObject<ClientPacket>(message, new PacketJSONConverter())!;
+                            IClientPacket packet = JsonConvert.DeserializeObject<IClientPacket>(message, new PacketJSONConverter())!;
                             await this.PacketReceived(client, packet);
                         } catch (JsonSerializationException e) {
                             await Console.Out.WriteLineAsync($"ERROR: Got malformed packet! \n{e.Message}\n");
                         }
                     } else if (result.MessageType == WebSocketMessageType.Close || webSocket.State == WebSocketState.Aborted) {
                         await webSocket.CloseAsync(
-                            result.CloseStatus.HasValue ? result.CloseStatus.Value : WebSocketCloseStatus.InternalServerError,
+                            result.CloseStatus ?? WebSocketCloseStatus.InternalServerError,
                             result.CloseStatusDescription, CancellationToken.None);
                         break;
                     }
@@ -116,7 +116,7 @@ namespace liveorlive_server {
                 // If there is only one actively connected player and the game is in progress, end it
                 if (this.connectedClients.Where(client => client.player != null).Count() <= 1) {
                     await Console.Out.WriteLineAsync("Everyone has left the game. Ending with no winner.");
-                    await this.endGame();
+                    await this.EndGame();
                 // Otherwise, if the current turn left, make them forfeit their turn
                 } else if (client.player != null && client.player.username == this.gameData.CurrentTurn) {
                     await this.ForfeitTurn(client.player);
@@ -124,7 +124,7 @@ namespace liveorlive_server {
             }
         }
 
-        private async Task PacketReceived(Client sender, ClientPacket packet) {
+        private async Task PacketReceived(Client sender, IClientPacket packet) {
             await Console.Out.WriteLineAsync($"Received packet from {sender}: {packet}");
             // Before the player is in the game but after they're connected
             if (sender.player == null) {
@@ -169,7 +169,7 @@ namespace liveorlive_server {
 
                         break;
                     default:
-                        throw new Exception($"Invalid packet type (without player instance) of \"{packet.packetType}\". Did you forget to implement this?");
+                        throw new Exception($"Invalid packet type (without player instance) of \"{packet.PacketType}\". Did you forget to implement this?");
                    }
             } else {
                 switch (packet) {
@@ -283,7 +283,7 @@ namespace liveorlive_server {
                         }
                         break;
                     default:
-                        throw new Exception($"Invalid packet type (with player instance) of \"{packet.packetType}\". Did you forget to implement this?");
+                        throw new Exception($"Invalid packet type (with player instance) of \"{packet.PacketType}\". Did you forget to implement this?");
                 }
             }
         }
@@ -546,7 +546,7 @@ namespace liveorlive_server {
             // Check for game end (if there's one player left standing)
             // Make sure the game is still going in case this triggers twice
             if (this.gameData.players.Count(player => player.isSpectator == false) <= 1 && this.gameData.gameStarted) {
-                await this.endGame();
+                await this.EndGame();
                 return;
             }
 
@@ -621,13 +621,13 @@ namespace liveorlive_server {
             });
         }
 
-        private async Task endGame() {
+        private async Task EndGame() {
             // There's almost certainly at least one player left when this runs (used to just wipe if there was nobody left, but that situation requires 2 people to DC at once which I don't care enough to account for)
             Player? possibleWinner = this.gameData.players.Find(player => player.lives >= 1);
             string winner = possibleWinner != null ? possibleWinner.username : "nobody";
 
             // Copy any data we may need (like players)
-            GameData newGameData = new GameData {
+            GameData newGameData = new() {
                 players = this.gameData.players
                     .Where(player => player.inGame)
                     .Select(player => {
@@ -651,14 +651,14 @@ namespace liveorlive_server {
         }
 
         private async Task SendGameLogMessage(string content) {
-            GameLogMessage message = new GameLogMessage(content);
+            GameLogMessage message = new(content);
             this.gameLog.AddMessage(message);
             await this.Broadcast(new NewGameLogMessageSentPacket {
                 message = message
             });
         }
 
-        private async Task Broadcast(ServerPacket packet) {
+        private async Task Broadcast(IServerPacket packet) {
             await Console.Out.WriteLineAsync($"Broadcasting {JsonConvert.SerializeObject(packet)}");
             foreach (Client client in this.connectedClients) {
                 if (client.player?.inGame ?? false) {
