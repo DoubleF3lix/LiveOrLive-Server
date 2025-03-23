@@ -1,40 +1,99 @@
-using System.Net;
-using System.Net.WebSockets;
-using System.Text;
-using Newtonsoft.Json;
+using liveorlive_server.Extensions;
+using liveorlive_server.HubPartials;
+using liveorlive_server.Models;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
 
 namespace liveorlive_server {
     public class Server {
+        readonly JsonSerializerOptions JSON_OPTIONS = new() { IncludeFields = true, WriteIndented = true };
         readonly WebApplication app;
 
-        readonly List<Client> connectedClients = [];
-        GameData gameData = new();
-        readonly GameLog gameLog = new();
-        readonly Chat chat = new();
-
+        public static HashSet<Lobby> Lobbies = [];
+        
         public Server() {
-            this.app = WebApplication.CreateBuilder().Build();
-            this.app.UseWebSockets();
-            
-            // app.MapGet("/", () => new Microsoft.AspNetCore.Mvc.JsonResult("Test complete, can connect"));
+            var builder = WebApplication.CreateBuilder();
+            builder.Services.AddSignalR();
+            this.app = builder.Build();
 
-            this.app.MapGet("/", async context => {
-                // Make sure all incoming requests are WebSocket requests, otherwise send 400
-                if (context.WebSockets.IsWebSocketRequest) {
-                    // Get the request and pass it off to our handler
-                    using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                    await this.ClientConnection(webSocket, context.Connection.Id);
-                } else {
-                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            app.MapHub<LiveOrLiveHub>("");
+
+            Lobbies.Add(new Lobby(name: "Jellyfish Sparkle"));
+            Lobbies.Add(new Lobby(name: "Onion Creek"));
+            Lobbies.Add(new Lobby(name: "Butterscotch Pancake"));
+            Lobbies.Add(new Lobby());
+            Lobbies.Add(new Lobby(name: "Pastrami Pizza"));
+
+            app.MapGet("/lobbies", () => { return JsonSerializer.Serialize(Lobbies.Where(lobby => !lobby.hidden), JSON_OPTIONS); });
+            app.MapPost("/lobbies", (CreateLobbyRequest request) => {
+                if (request.Username == null) {
+                    return Results.BadRequest("Username not supplied");
                 }
+                if (request.Username.Length > 20 || request.Username.Length < 3) {
+                    return Results.BadRequest("Username must be between 3 and 20 characters");
+                }
+
+                // Config is default initialized by auto-binding magic if it isn't set
+                // And if any properties are missing, they get their default values too
+                var newLobby = new Lobby(request.Config, request.LobbyName);
+                Lobbies.Add(newLobby);
+
+                return Results.Ok(new CreateLobbyResponse { LobbyId = newLobby.id });
             });
+            app.MapGet("/verify-lobby-connection-info", (HttpContext context) => {
+                var lobbyId = context.GetStringQueryParam("lobbyId");
+                var username = context.GetStringQueryParam("username");
+
+                var errorMessage = ValidateLobbyConnectionInfo(lobbyId, username);
+                if (errorMessage != null) {
+                    return Results.BadRequest(errorMessage);
+                }
+
+                return Results.Ok();
+            });
+        }
+
+        public static string? ValidateLobbyConnectionInfo(string? lobbyId, string? username) {
+            if (lobbyId == null || username == null) {
+                return "Missing lobbyId or username";
+            }
+
+            var lobby = Lobbies.FirstOrDefault(lobby => lobby.id == lobbyId);
+            if (lobby == null) {
+                return "Couldn't locate lobby";
+            }
+
+            if (username.Length > 20 || username.Length < 3) {
+                return "Username must be between 3 and 20 characters";
+            }
+
+            var existingPlayerWithUsername = lobby.players.FirstOrDefault(player => player.username == username);
+            if (existingPlayerWithUsername != null && existingPlayerWithUsername.inGame) {
+                return "Username is already taken";
+            }
+
+            // No error
+            return null;
+        }
+
+        public static Lobby GetLobbyById(string lobbyId) {
+            if (TryGetLobbyById(lobbyId, out var result)) {
+                return result;
+            }
+            throw new InvalidOperationException();
+        }
+
+        public static bool TryGetLobbyById(string? lobbyId, [NotNullWhen(true)] out Lobby? lobby) {
+            lobby = Lobbies.FirstOrDefault(lobby => lobby.id == lobbyId);
+            return lobby != null;
         }
 
         public async Task Start(string url, int port) {
             await this.app.RunAsync($"http://{url}:{port}");
         }
 
+        /*
         // All clients are held in here, and this function only exits when they disconnect
         private async Task ClientConnection(WebSocket webSocket, string ID) {
             // Sometimes, clients can get stuck in a bugged closed state. This will attempt to purge them.
@@ -117,7 +176,7 @@ namespace liveorlive_server {
                 if (this.connectedClients.Where(client => client.player != null).Count() <= 1) {
                     await Console.Out.WriteLineAsync("Everyone has left the game. Ending with no winner.");
                     await this.EndGame();
-                // Otherwise, if the current turn left, make them forfeit their turn
+                    // Otherwise, if the current turn left, make them forfeit their turn
                 } else if (client.player != null && client.player.username == this.gameData.CurrentTurn) {
                     await this.ForfeitTurn(client.player);
                 }
@@ -132,7 +191,7 @@ namespace liveorlive_server {
                     case JoinGamePacket joinGamePacket:
                         // Check max length
                         if (joinGamePacket.username.Length > 20) {
-                            await sender.SendMessage( new PlayerJoinRejectedPacket { reason = "That username is too long. Please choose another." });
+                            await sender.SendMessage(new PlayerJoinRejectedPacket { reason = "That username is too long. Please choose another." });
                             return;
                         } else if (joinGamePacket.username.Length < 3) {
                             await sender.SendMessage(new PlayerJoinRejectedPacket { reason = "That username is too short. Please choose another." });
@@ -142,9 +201,9 @@ namespace liveorlive_server {
                         // Check if the username was available
                         bool usernameTaken = this.gameData.players.Any(player => player.username == joinGamePacket.username);
                         if (!usernameTaken) {
-                            sender.player = new Player(joinGamePacket.username, false, this.gameData.gameStarted);
+                            sender.player = new Player(new Config(), joinGamePacket.username, "", this.gameData.gameStarted);
                             this.gameData.players.Add(sender.player);
-                        // If it's not, check if the username is still logged in. If so, error, if not, assume it's the player logging back in
+                            // If it's not, check if the username is still logged in. If so, error, if not, assume it's the player logging back in
                         } else {
                             Player takenPlayer = this.gameData.players.First(player => player.username == joinGamePacket.username);
                             if (takenPlayer.inGame) {
@@ -170,7 +229,7 @@ namespace liveorlive_server {
                         break;
                     default:
                         throw new Exception($"Invalid packet type (without player instance) of \"{packet.packetType}\". Did you forget to implement this?");
-                   }
+                }
             } else {
                 switch (packet) {
                     case SendNewChatMessagePacket sendNewChatMessagePacket:
@@ -303,7 +362,7 @@ namespace liveorlive_server {
                 await sender.SendMessage(new ActionFailedPacket { reason = $"{target.username} has already been skipped!" });
                 return false;
             }
-            if (!checkForItem || sender.player.items.Remove(Item.SkipPlayerTurn)) {
+            if (!checkForItem || sender.player.items.Remove(Item.Skip)) {
                 await this.Broadcast(new SkipItemUsedPacket { target = target.username });
                 await this.SendGameLogMessage($"{target.username} has been skipped by {sender.player.username}");
                 target.isSkipped = true;
@@ -342,7 +401,7 @@ namespace liveorlive_server {
             }
 
             if (!checkForItem || sender.player.items.Remove(Item.CheckBullet)) {
-                AmmoType peekResult = this.gameData.PeekAmmoFromChamber();
+                BulletType peekResult = this.gameData.PeekAmmoFromChamber();
                 await sender.SendMessage(new CheckBulletItemResultPacket { result = peekResult });
                 await this.Broadcast(new CheckBulletItemUsedPacket());
                 await this.SendGameLogMessage($"{sender.player.username} has used a Chamber Check item");
@@ -353,7 +412,7 @@ namespace liveorlive_server {
             }
         }
 
-        private async Task<bool> UseRebalancerItem(Client sender, AmmoType ammoType, bool checkForItem = true) {
+        private async Task<bool> UseRebalancerItem(Client sender, BulletType ammoType, bool checkForItem = true) {
             if (sender.player == null) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
                 return false;
@@ -438,7 +497,7 @@ namespace liveorlive_server {
         }
 
         // Can't be stolen, don't need to worry about not checking
-        private async Task<bool> UseStealItem(Client sender, Player? target, Item item, AmmoType? ammoType, string? skipTargetUsername) {
+        private async Task<bool> UseStealItem(Client sender, Player? target, Item item, BulletType? ammoType, string? skipTargetUsername) {
             if (sender.player == null) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "You... don't exist?" });
                 return false;
@@ -453,31 +512,31 @@ namespace liveorlive_server {
             if (item == Item.Rebalancer && ammoType == null) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "ERROR: ammoType was null when stealing Rebalancer. Please raise a GitHub issue." });
                 return false;
-            } else if (item == Item.SkipPlayerTurn && skipTargetUsername == null) {
+            } else if (item == Item.Skip && skipTargetUsername == null) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "ERROR: skipTarget was null when stealing Skip. Please raise a GitHub issue." });
             }
 
             Player? skipTarget = this.gameData.GetPlayerByUsername(skipTargetUsername);
-            if (item == Item.SkipPlayerTurn && skipTarget == null) {
+            if (item == Item.Skip && skipTarget == null) {
                 await sender.SendMessage(new ActionFailedPacket { reason = "Invalid player for skip target" });
                 return false;
             }
 
             // Not Remove since we only remove if it the child item was a success
-            if (sender.player.items.Contains(Item.StealItem)) {
+            if (sender.player.items.Contains(Item.Pickpocket)) {
                 bool useSuccess = item switch {
                     // skipTarget/ammoType is definitely not null (checks above), is safe
-                    Item.SkipPlayerTurn => await this.UseSkipItem(sender, skipTarget!, false),
+                    Item.Skip => await this.UseSkipItem(sender, skipTarget!, false),
                     Item.DoubleDamage => await this.UseDoubleDamageItem(sender, false),
                     Item.CheckBullet => await this.UseCheckBulletItem(sender, false),
-                    Item.Rebalancer => await this.UseRebalancerItem(sender, (AmmoType)ammoType!, false),
+                    Item.Rebalancer => await this.UseRebalancerItem(sender, (BulletType)ammoType!, false),
                     Item.Adrenaline => await this.UseAdrenalineItem(sender, false),
                     Item.Quickshot => await this.UseQuickshotItem(sender, false),
                     _ => false
                 };
 
                 if (useSuccess) {
-                    sender.player.items.Remove(Item.StealItem);
+                    sender.player.items.Remove(Item.Pickpocket);
                     target.items.Remove(item);
                     await this.Broadcast(new StealItemUsedPacket { target = target.username, item = item });
 
@@ -493,7 +552,7 @@ namespace liveorlive_server {
         }
 
         private async Task<bool> ShootPlayer(Player shooter, Player target) {
-            AmmoType shot = this.gameData.PullAmmoFromChamber();
+            BulletType shot = this.gameData.PullAmmoFromChamber();
             await this.Broadcast(new PlayerShotAtPacket { target = target.username, ammoType = shot, damage = this.gameData.damageForShot });
 
             if (shooter != target) {
@@ -501,10 +560,10 @@ namespace liveorlive_server {
             } else {
                 await this.SendGameLogMessage($"{shooter.username} shot themselves with a {shot.ToString().ToLower()} round.");
             }
-            
+
             bool isTurnEndingMove = true;
             // If it's a live round, regardless of who, the turn is over
-            if (shot == AmmoType.Live) {
+            if (shot == BulletType.Live) {
                 target.lives -= this.gameData.damageForShot;
                 bool wasEliminated = await this.CheckAndEliminatePlayer(target);
                 if (wasEliminated && GameData.LOOTING && shooter != target) {
@@ -614,8 +673,8 @@ namespace liveorlive_server {
                 }
             }
 
-            await this.Broadcast(new NewRoundStartedPacket { 
-                players = this.gameData.players, 
+            await this.Broadcast(new NewRoundStartedPacket {
+                players = this.gameData.players,
                 liveCount = ammoCounts[0],
                 blankCount = ammoCounts[1]
             });
@@ -634,7 +693,7 @@ namespace liveorlive_server {
                         player.isSpectator = false;
                         player.isSkipped = false;
                         player.items.Clear();
-                        player.lives = Player.DEFAULT_LIVES;
+                        player.lives = 3;
                         return player;
                     })
                     .ToList(),
@@ -666,5 +725,6 @@ namespace liveorlive_server {
                 }
             }
         }
+        */
     }
 }

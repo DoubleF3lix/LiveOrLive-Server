@@ -1,5 +1,6 @@
 ﻿namespace liveorlive_server {
-    public abstract class Deck<T> {
+    public abstract class Deck<T>(Config config) {
+        protected Config config = config;
         protected List<T> deck = [];
 
         public abstract void Refresh();

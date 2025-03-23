@@ -1,36 +1,30 @@
-﻿namespace liveorlive_server {
-    public class AmmoDeck : Deck<AmmoType> {
-        public int LiveCount { get; private set; } = 0;
+﻿using liveorlive_server.Enums;
+
+namespace liveorlive_server
+{
+    public class AmmoDeck(Config config) : Deck<BulletType>(config) {
         public int BlankCount { get; private set; } = 0;
+        public int LiveCount { get; private set; } = 0;
 
         public override void Refresh() {
             this.deck.Clear();
 
-            this.LiveCount = 0;
-            this.BlankCount = 0;
-            this.AddAmmo(AmmoType.Live);
-            this.AddAmmo(AmmoType.Blank);
+            Random random = new();
+            this.BlankCount = random.Next(1, config.MaxBlankRounds);
+            this.LiveCount = random.Next(1, config.MaxLiveRounds);
+
+            for (int i = 0; i < this.BlankCount; i++) {
+                this.deck.Add(BulletType.Blank);
+            }
+            for (int i = 0; i < this.LiveCount; i++) {
+                this.deck.Add(BulletType.Live);
+            }
 
             this.Shuffle();
         }
 
-        public int AddAmmo(AmmoType type) {
-            Random random = new();
-            int count = random.Next(1, 7);
-            for (int i = 0; i < count; i++) {
-                this.deck.Add(type);
-            }
-
-            if (type == AmmoType.Live) {
-                this.LiveCount += count;
-            } else if (type == AmmoType.Blank) {
-                this.BlankCount += count;
-            }
-            return count;
-        }
-
         // Used by check bullet item
-        public AmmoType Peek() {
+        public BulletType Peek() {
             return this.deck[^1]; // From the end
         }
     }

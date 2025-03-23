@@ -1,23 +1,24 @@
-﻿namespace liveorlive_server {
-    // Internal server representation of player data
-    public class Player(string username, bool inGame = false, bool isSpectator = false) {
-        public const int DEFAULT_LIVES = 5;
-        // TODO random amount of items per round
-        public const int ITEM_COUNT = 4;
+﻿using liveorlive_server.Enums;
+using System.Text.Json.Serialization;
+using Tapper;
 
+namespace liveorlive_server
+{
+    [TranspilationSource]
+    public class Player(Config config, string username, string connectionId, bool isSpectator = false) {
         public string username = username;
-        public bool inGame = inGame;
+        [JsonIgnore]
+        public string connectionId = connectionId;
+
+        // Needed to keep track of players who have left without kicking them for disconnects
+        public bool inGame = true;
         public bool isSpectator = isSpectator;
 
-        public int lives = DEFAULT_LIVES;
-        public List<Item> items = new(ITEM_COUNT);
+        public int lives = config.DefaultLives;
+        public List<Item> items = new(config.MaxItems);
         public bool isSkipped = false;
 
         public readonly long joinTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
-
-        public void SetItems(List<Item> items) {
-            this.items = items;
-        }
 
         public override bool Equals(object? obj) {
             return obj is Player other && this.Equals(other);

@@ -1,8 +1,5 @@
-﻿using Newtonsoft.Json;
-
-namespace liveorlive_server {
+﻿namespace liveorlive_server {
     public class Chat {
-        [JsonProperty]
         readonly List<ChatMessage> messages = [];
 
         public void AddMessage(ChatMessage message) {

@@ -1,4 +1,9 @@
-﻿namespace liveorlive_server {
+﻿using liveorlive_server.Enums;
+using Tapper;
+
+namespace liveorlive_server
+{
+    [TranspilationSource]
     public class GameData {
         public const bool LOOTING = true;
         public const bool VENGEANCE = true;
@@ -18,8 +23,8 @@
 
         public GameData() {
             this.turnOrderManager = new TurnOrderManager();
-            this.itemDeck = new ItemDeck(this.players.Count);
-            this.ammoDeck = new AmmoDeck();
+            this.itemDeck = new ItemDeck(new Config(), 0);
+            this.ammoDeck = new AmmoDeck(new Config());
         }
 
         public void StartGame() {
@@ -31,7 +36,7 @@
             this.itemDeck.Refresh();
             // Give all players their items
             foreach (Player player in this.players) {
-                player.SetItems(this.itemDeck.GetSetForPlayer());
+                // player.items = this.itemDeck.GetSetForPlayer();
             }
             this.ammoDeck.Refresh(); // Load the chamber
             return [this.ammoDeck.LiveCount, this.ammoDeck.BlankCount]; // Used in the outgoing packet
@@ -43,7 +48,7 @@
             return this.GetCurrentPlayerForTurn()!;
         }
 
-        public AmmoType PullAmmoFromChamber() {
+        public BulletType PullAmmoFromChamber() {
             return this.ammoDeck.Pop();
         }
 
@@ -51,15 +56,15 @@
             return this.ammoDeck.Count;
         }
 
-        public AmmoType PeekAmmoFromChamber() {
+        public BulletType PeekAmmoFromChamber() {
             return this.ammoDeck.Peek();
         }
 
-        public int AddAmmoToChamberAndShuffle(AmmoType type) {
-            int count = this.ammoDeck.AddAmmo(type);
-            this.ammoDeck.Shuffle();
-            return count;
-        }
+        //public int AddAmmoToChamberAndShuffle(BulletType type) {
+        //    int count = this.ammoDeck.AddAmmo(type);
+        //    this.ammoDeck.Shuffle();
+        //    return count;
+        //}
 
         public Player? GetCurrentPlayerForTurn() {
             return this.GetPlayerByUsername(this.turnOrderManager.CurrentTurn);

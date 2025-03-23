@@ -1,0 +1,1 @@
+dotnet tsrts --project liveorlive-server.csproj --output ../client/src/types/generated

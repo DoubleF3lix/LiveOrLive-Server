@@ -1,35 +1,44 @@
-﻿namespace liveorlive_server {
-    public class ItemDeck(int playerCount) : Deck<Item> {
-        // Need 4 of each item at minimum (7 items total), which is enough for 6 people
-        // Requires floor div, which is present here
-        // Don't need to refresh since it's done at the start of each round anyway
-        readonly int multiplier = ((playerCount - 1) / 6) + 1;
+﻿using liveorlive_server.Enums;
 
-        // Remove all the old items and repopulate as needed for the player count
-        public override void Refresh() {
-            this.deck.Clear();
+namespace liveorlive_server {
+    // This deck seeks to emulate an actual deck of cards
+    // That is, players can hoard items, and only cards that are not in play can be 
+    public class ItemDeck : Deck<Item> {
+        const int ITEM_PER_DECK = 4; // Number of each item per deck
+
+        private readonly int playerCount;
+
+        public ItemDeck(Config config, int playerCount) : base(config) {
+            this.playerCount = playerCount;
 
             int uniqueItemCount = Enum.GetNames(typeof(Item)).Length;
-            int totalItems = this.multiplier * 4;
-            for (int i = 0; i < uniqueItemCount; i++) { // For each type of item...
-                for (int j = 0; j < totalItems; j++) { // ...add 4 * multiplier of that item to the deck
+            int itemsPerDeck = uniqueItemCount * ITEM_PER_DECK;
+            // Decks needed is total max items across all players divided by how many items are in one deck, ceiling'd
+            int deckCount = (int)Math.Ceiling((double)(this.config.MaxItems * this.playerCount) / itemsPerDeck);
+            
+            for (int i = 0; i < uniqueItemCount; i++) {
+                for (int j = 0; j < ITEM_PER_DECK * deckCount; j++) {
                     this.deck.Add((Item)i);
                 }
             }
+        }
+
+        public override void Refresh() {
             this.Shuffle();
         }
 
-        // Handles refreshing the list
-        public List<Item> GetSetForPlayer() {
-            if (this.deck.Count < 4) {
-                this.Refresh();
-            }
+        // Should be used when an item is used
+        public void PutItemBack(Item item) {
+            this.deck.Add(item);
+        }
 
-            List<Item> output = new(4);
-            for (int i = 0; i < 4; i++) {
-                output.Add(this.Pop());
-            }
-            return output;
+        // We're guarunteed to have enough items according to constructor logic
+        public void DealItemsToPlayer(Player player) {
+            var itemsToDealCount = this.config.RandomItemsPerRound ? new Random().Next(this.config.MinItemsPerRound, this.config.MaxBlankRounds) : this.config.MaxItemsPerRound;
+            var itemsToDeal = Math.Min(this.config.MaxItems - player.items.Count, itemsToDealCount);
+            var output = new List<Item>(itemsToDeal);
+            output.AddRange(Enumerable.Range(0, itemsToDeal).Select(_ => this.Pop()));
+            player.items.AddRange(output);
         }
     }
 }

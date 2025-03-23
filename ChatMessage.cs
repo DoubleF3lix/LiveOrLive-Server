@@ -1,4 +1,7 @@
-﻿namespace liveorlive_server {
+﻿using Tapper;
+
+namespace liveorlive_server {
+    [TranspilationSource]
     public class ChatMessage(Player author, string message) {
         public readonly Player author = author;
         public readonly string message = message;
