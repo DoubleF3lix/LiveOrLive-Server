@@ -15,7 +15,14 @@ namespace liveorlive_server {
         public Server() {
             var builder = WebApplication.CreateBuilder();
             builder.Services.AddSignalR();
+            builder.Services.AddCors(options => {
+                options.AddPolicy(name: "_allowClientOrigins", policy => {
+                    policy.WithOrigins("http://doublef3lix.github.io", "https://doublef3lix.github.io");
+                });
+            });
+
             this.app = builder.Build();
+            app.UseCors("_allowClientOrigins");
 
             app.MapHub<LiveOrLiveHub>("");
 
