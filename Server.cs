@@ -37,6 +37,7 @@ namespace liveorlive_server {
             Lobbies.Add(new Lobby(name: "Butterscotch Pancake"));
             Lobbies.Add(new Lobby());
             Lobbies.Add(new Lobby(name: "Pastrami Pizza"));
+            Lobbies.Add(new Lobby(name: "Gambling Addiction"));
 
             app.MapGet("/lobbies", () => { return JsonSerializer.Serialize(Lobbies.Where(lobby => !lobby.hidden), JSON_OPTIONS); });
             app.MapPost("/lobbies", (CreateLobbyRequest request) => {

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using liveorlive_server.Deck;
 using Tapper;
 
 namespace liveorlive_server {
