@@ -17,7 +17,11 @@ namespace liveorlive_server {
             builder.Services.AddSignalR();
             builder.Services.AddCors(options => {
                 options.AddPolicy(name: "_allowClientOrigins", policy => {
-                    policy.WithOrigins("http://doublef3lix.github.io", "https://doublef3lix.github.io");
+                    policy
+                        .WithOrigins("http://doublef3lix.github.io", "https://doublef3lix.github.io")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
 
