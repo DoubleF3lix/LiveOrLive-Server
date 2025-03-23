@@ -26,6 +26,8 @@ namespace liveorlive_server {
             });
 
             this.app = builder.Build();
+            app.UseRouting();
+            app.UseAuthorization();
             app.UseCors("_allowClientOrigins");
 
             app.MapHub<LiveOrLiveHub>("");
