@@ -1,19 +1,22 @@
-﻿namespace liveorlive_server {
+﻿using Tapper;
+
+namespace liveorlive_server {
+    [TranspilationSource]
     public class Chat {
-        readonly List<ChatMessage> messages = [];
+        public List<ChatMessage> Messages { get; private set; }  = [];
 
         public void AddMessage(ChatMessage message) {
-            this.messages.Add(message);
+            this.Messages.Add(message);
         }
 
-        public ChatMessage AddMessage(Player author, string content) {
-            ChatMessage newMessage = new(author, content);
-            this.messages.Add(newMessage);
+        public ChatMessage AddMessage(string author, string content) {
+            var newMessage = new ChatMessage(author, content);
+            this.Messages.Add(newMessage);
             return newMessage;
         }
 
         public List<ChatMessage> GetMessages() {  
-            return this.messages; 
+            return this.Messages; 
         }
     }
 }

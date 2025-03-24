@@ -1,13 +1,17 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using liveorlive_server.Extensions;
+using Microsoft.AspNetCore.SignalR;
 
 namespace liveorlive_server.HubPartials {
     public partial class LiveOrLiveHub : Hub<IHubServerResponse>, IChatRequest {
         public async Task SendChatMessage(string content) {
-            
+            var lobby = Context.GetLobby();
+            var chatMessage = lobby.chat.AddMessage(Context.GetPlayer().username, content);
+            await Clients.Group(lobby.id).ChatMessageSent(chatMessage);
         }
 
         public async Task GetChatMessagesRequest() {
-
+            var lobby = Context.GetLobby();
+            await Clients.Caller.GetChatMessagesResponse(lobby.chat.Messages);
         }
 
         public async Task DeleteChatMessage(Guid messageId) {

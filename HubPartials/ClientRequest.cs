@@ -5,8 +5,8 @@ namespace liveorlive_server.HubPartials
 {
     [Hub]
     public interface IChatRequest {
-        Task SendChatMessage(string content);
         Task GetChatMessagesRequest();
+        Task SendChatMessage(string content);
         Task DeleteChatMessage(Guid messageId);
         Task EditChatMessage(Guid messageId, string content);
     }

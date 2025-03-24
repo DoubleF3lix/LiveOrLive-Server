@@ -16,6 +16,8 @@ namespace liveorlive_server {
         public string? host;
         public bool gameStarted = new Random().Next(2) == 0;
 
+        public Chat chat = new();
+
         private TurnOrderManager turnOrderManager;
         private ItemDeck itemDeck;
         private AmmoDeck ammoDeck;

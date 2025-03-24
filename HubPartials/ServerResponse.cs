@@ -10,8 +10,8 @@ namespace liveorlive_server.HubPartials
 
     [Receiver]
     public interface IChatResponse {
+        Task GetChatMessagesResponse(List<ChatMessage> messages);
         Task ChatMessageSent(ChatMessage message);
-        Task GetChatMessageResponse(ChatMessage[] messages);
         Task ChatMessageDeleted(Guid messageId);
         Task ChatMessageEdited(Guid messageId, string content);
     }
