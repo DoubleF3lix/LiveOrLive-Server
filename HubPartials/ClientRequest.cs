@@ -18,7 +18,6 @@ namespace liveorlive_server.HubPartials
 
     [Hub]
     public interface IConnectionRequest {
-        Task JoinGameRequest(string username);
         Task SetHost(string username);
         Task KickPlayer(string username);
     }

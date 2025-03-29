@@ -5,7 +5,8 @@ namespace liveorlive_server.HubPartials {
     public partial class LiveOrLiveHub : Hub<IHubServerResponse>, IChatRequest {
         public async Task SendChatMessage(string content) {
             var lobby = Context.GetLobby();
-            var chatMessage = lobby.chat.AddMessage(Context.GetPlayer().username, content);
+            // Take only the first 500 characters. No spam 4 u
+            var chatMessage = lobby.chat.AddMessage(Context.GetPlayer().username, content[..Math.Min(content.Length, 500)]);
             await Clients.Group(lobby.id).ChatMessageSent(chatMessage);
         }
 

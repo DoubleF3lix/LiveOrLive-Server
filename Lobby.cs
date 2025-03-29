@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 using liveorlive_server.Deck;
 using Tapper;
 
@@ -11,11 +12,12 @@ namespace liveorlive_server {
         public readonly long creationTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
 
         public Config Config { get; private set; }
-        public List<Player> players = [];
+        public readonly List<Player> players = [];
 
         public string? host;
         public bool gameStarted = new Random().Next(2) == 0;
 
+        [JsonIgnore]
         public Chat chat = new();
 
         private TurnOrderManager turnOrderManager;
@@ -41,25 +43,14 @@ namespace liveorlive_server {
             }
         }
 
-        public Player GetPlayerByUsername(string username) {
-            return this.players.First(player => player.username == username);
-        }
-
-        public Player? TryGetPlayerByUsername(string username) {
-            return this.players.FirstOrDefault(player => player.username == username);
-        }
-
-        public string GetConnectionIdByUsername(string username) {
-            return this.GetPlayerByUsername(username).connectionId;
-        }
-
-        public Player? GetPlayerByConnectionId(string connectionId) {
-            return this.players.First(player => player.connectionId == connectionId);
+        public bool TryGetPlayerByUsername(string username, [NotNullWhen(true)] out Player? player) {
+            player = this.players.FirstOrDefault(player => player.username == username);
+            return player != null;
         }
 
         public static string GenerateId() {
-            var id = "";
             var rand = new Random();
+            string? id;
             do {
                 /* id = Guid.NewGuid()
                     .ToString("N")
@@ -72,7 +63,7 @@ namespace liveorlive_server {
                     .Replace("S", "")
                     .Substring(0, 4); */
                 id = rand.Next(1000, 10000).ToString();
-            } while (id != "" && Server.Lobbies.Any(lobby => lobby.id == id));
+            } while (id != "" && Server.TryGetLobbyById(id, out _));
             return id;
         }
     }

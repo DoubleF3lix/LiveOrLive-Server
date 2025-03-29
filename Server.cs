@@ -10,7 +10,7 @@ namespace liveorlive_server {
         readonly JsonSerializerOptions JSON_OPTIONS = new() { IncludeFields = true, WriteIndented = true };
         readonly WebApplication app;
 
-        public static HashSet<Lobby> Lobbies = [];
+        private static readonly HashSet<Lobby> Lobbies = [];
         
         public Server() {
             var builder = WebApplication.CreateBuilder();
@@ -44,8 +44,8 @@ namespace liveorlive_server {
                 if (request.Username == null) {
                     return Results.BadRequest("Username not supplied");
                 }
-                if (request.Username.Length > 20 || request.Username.Length < 3) {
-                    return Results.BadRequest("Username must be between 3 and 20 characters");
+                if (request.Username.Length > 20 || request.Username.Length < 2) {
+                    return Results.BadRequest("Username must be between 2 and 20 characters");
                 }
 
                 // Config is default initialized by auto-binding magic if it isn't set
@@ -78,8 +78,8 @@ namespace liveorlive_server {
                 return "Couldn't locate lobby";
             }
 
-            if (username.Length > 20 || username.Length < 3) {
-                return "Username must be between 3 and 20 characters";
+            if (username.Length > 20 || username.Length < 2) {
+                return "Username must be between 2 and 20 characters";
             }
 
             var existingPlayerWithUsername = lobby.players.FirstOrDefault(player => player.username == username);
