@@ -39,10 +39,10 @@ namespace liveorlive_server.Deck
         // We're guarunteed to have enough items according to constructor logic
         public void DealItemsToPlayer(Player player) {
             var itemsToDealCount = config.RandomItemsPerRound ? new Random().Next(config.MinItemsPerRound, config.MaxBlankRounds) : config.MaxItemsPerRound;
-            var itemsToDeal = Math.Min(config.MaxItems - player.items.Count, itemsToDealCount);
+            var itemsToDeal = Math.Min(config.MaxItems - player.Items.Count, itemsToDealCount);
             var output = new List<Item>(itemsToDeal);
             output.AddRange(Enumerable.Range(0, itemsToDeal).Select(_ => Pop()));
-            player.items.AddRange(output);
+            player.Items.AddRange(output);
         }
     }
 }

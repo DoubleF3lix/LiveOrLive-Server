@@ -6,9 +6,6 @@ namespace liveorlive_server
 {
     [TranspilationSource]
     public class GameData {
-        public const bool LOOTING = true;
-        public const bool VENGEANCE = true;
-
         public List<Player> players = [];
         public string? host = null;
         public bool gameStarted = false;
@@ -16,7 +13,6 @@ namespace liveorlive_server
 
         public string CurrentTurn { get { return this.turnOrderManager.CurrentTurn; } }
         public int damageForShot = 1;
-        public bool quickshotEnabled = false;
 
         private readonly TurnOrderManager turnOrderManager;
         private readonly ItemDeck itemDeck;
@@ -72,20 +68,20 @@ namespace liveorlive_server
         }
 
         public List<Player> GetActivePlayers() {
-            return this.players.Where(player => player.inGame == true && player.isSpectator == false).ToList();
+            return this.players.Where(player => player.InGame == true && player.IsSpectator == false).ToList();
         }
 
         public Player? GetPlayerByUsername(string? username) {
             if (username == null) return null;
-            return this.players.Find(player => player.username == username);
+            return this.players.Find(player => player.Username == username);
         }
 
         // Remove player from the turnOrder list, adjusting the index backwards if necessary to avoid influencing order
         // Also marks as spectator
         public void EliminatePlayer(Player player) {
-            this.turnOrderManager.EliminatePlayer(player.username);
-            player.isSpectator = true;
-            player.lives = 0;
+            this.turnOrderManager.EliminatePlayer(player.Username);
+            player.IsSpectator = true;
+            player.Lives = 0;
         }
     }
 }

@@ -38,7 +38,7 @@ namespace liveorlive_server.HubPartials
         Task NewRoundStarted(int blankRoundCount, int liveRoundCount);
         Task TurnStarted(string username);
         Task TurnEnded(string username);
-        Task GameDataResponse(GameData gameData);
+        Task GetLobbyDataResponse(Lobby lobbyData);
         Task PlayerShotAt(string target, BulletType bulletType, int damage);
     }
 

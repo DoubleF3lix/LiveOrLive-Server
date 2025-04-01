@@ -24,7 +24,7 @@ namespace liveorlive_server.HubPartials
 
     [Hub]
     public interface IBaseGameRequest {
-        Task GameDataRequest();
+        Task GetLobbyDataRequest();
         Task ShootPlayer(string target);
     }
 

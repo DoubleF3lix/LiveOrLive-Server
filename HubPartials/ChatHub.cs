@@ -6,13 +6,13 @@ namespace liveorlive_server.HubPartials {
         public async Task SendChatMessage(string content) {
             var lobby = Context.GetLobby();
             // Take only the first 500 characters. No spam 4 u
-            var chatMessage = lobby.chat.AddMessage(Context.GetPlayer().username, content[..Math.Min(content.Length, 500)]);
-            await Clients.Group(lobby.id).ChatMessageSent(chatMessage);
+            var chatMessage = lobby.AddChatMessage(Context.GetPlayer().Username, content[..Math.Min(content.Length, 500)]);
+            await Clients.Group(lobby.Id).ChatMessageSent(chatMessage);
         }
 
         public async Task GetChatMessagesRequest() {
             var lobby = Context.GetLobby();
-            await Clients.Caller.GetChatMessagesResponse(lobby.chat.Messages);
+            await Clients.Caller.GetChatMessagesResponse(lobby.ChatMessages);
         }
 
         public async Task DeleteChatMessage(Guid messageId) {

@@ -20,7 +20,7 @@ namespace liveorlive_server.Extensions {
         public static bool TryGetPlayer(this HubCallerContext context, [NotNullWhen(true)] out Player? player) {
             player = null;
             if (context.TryGetLobby(out var lobby)) {
-                player = lobby.players.FirstOrDefault(player => player.connectionId == context.ConnectionId);
+                player = lobby.Players.FirstOrDefault(player => player.connectionId == context.ConnectionId);
             }
             return player != null;
         }

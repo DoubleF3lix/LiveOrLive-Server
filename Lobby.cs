@@ -6,45 +6,47 @@ using Tapper;
 namespace liveorlive_server {
     [TranspilationSource]
     public class Lobby {
-        public string id = GenerateId();
-        public string name;
-        public bool hidden = false;
-        public readonly long creationTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
+        public string Id { get; set; } = GenerateId();
+        public string Name { get; set; }
+        public bool Hidden { get; set; } = false;
+        public long CreationTime { get; } = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
 
         public Config Config { get; private set; }
-        public readonly List<Player> players = [];
+        public List<Player> Players { get; private set; } = [];
 
-        public string? host;
-        public bool gameStarted = new Random().Next(2) == 0;
+        public string? Host { get; set; }
+        public bool GameStarted { get; set; } = new Random().Next(2) == 0; // false
 
-        [JsonIgnore]
-        public Chat chat = new();
-
+        private readonly Chat chat = new();
         private TurnOrderManager turnOrderManager;
         private ItemDeck itemDeck;
         private AmmoDeck ammoDeck;
 
+        [JsonIgnore]
+        public List<ChatMessage> ChatMessages => this.chat.Messages;
+        public ChatMessage AddChatMessage(string author, string content) => this.chat.AddMessage(author, content); 
+
         public Lobby(Config? config = null, string? name = null) {
             this.Config = config ?? new Config();
-            this.name = name ?? this.id;
+            this.Name = name ?? this.Id;
             this.ResetManagers();
         }
 
         [MemberNotNull(nameof(turnOrderManager), nameof(itemDeck), nameof(ammoDeck))]
         public void ResetManagers() {
-            this.itemDeck = new ItemDeck(this.Config, this.players.Count);
+            this.itemDeck = new ItemDeck(this.Config, this.Players.Count);
             this.ammoDeck = new AmmoDeck(this.Config);
             this.turnOrderManager = new TurnOrderManager();
         }
 
         public void SetConfig(Config config) {
-            if (!this.gameStarted) {
+            if (!this.GameStarted) {
                 this.Config = config;
             }
         }
 
         public bool TryGetPlayerByUsername(string username, [NotNullWhen(true)] out Player? player) {
-            player = this.players.FirstOrDefault(player => player.username == username);
+            player = this.Players.FirstOrDefault(player => player.Username == username);
             return player != null;
         }
 

@@ -13,7 +13,7 @@
         private int currentTurnIndex = -1;
 
         public void Populate(List<Player> players) {
-            this.turnOrder = players.Where(player => player.inGame == true).Select(player => player.username).ToList();
+            this.turnOrder = players.Where(player => player.InGame == true).Select(player => player.Username).ToList();
         }
 
         public void Advance() {

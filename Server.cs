@@ -39,7 +39,7 @@ namespace liveorlive_server {
             Lobbies.Add(new Lobby(name: "Pastrami Pizza"));
             Lobbies.Add(new Lobby(name: "Gambling Addiction"));
 
-            app.MapGet("/lobbies", () => { return JsonSerializer.Serialize(Lobbies.Where(lobby => !lobby.hidden), JSON_OPTIONS); });
+            app.MapGet("/lobbies", () => { return JsonSerializer.Serialize(Lobbies.Where(lobby => !lobby.Hidden), JSON_OPTIONS); });
             app.MapPost("/lobbies", (CreateLobbyRequest request) => {
                 if (request.Username == null) {
                     return Results.BadRequest("Username not supplied");
@@ -53,7 +53,7 @@ namespace liveorlive_server {
                 var newLobby = new Lobby(request.Config, request.LobbyName);
                 Lobbies.Add(newLobby);
 
-                return Results.Ok(new CreateLobbyResponse { LobbyId = newLobby.id });
+                return Results.Ok(new CreateLobbyResponse { LobbyId = newLobby.Id });
             });
             app.MapGet("/verify-lobby-connection-info", (HttpContext context) => {
                 var lobbyId = context.GetStringQueryParam("lobbyId");
@@ -73,7 +73,7 @@ namespace liveorlive_server {
                 return "Missing lobbyId or username";
             }
 
-            var lobby = Lobbies.FirstOrDefault(lobby => lobby.id == lobbyId);
+            var lobby = Lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
             if (lobby == null) {
                 return "Couldn't locate lobby";
             }
@@ -82,8 +82,8 @@ namespace liveorlive_server {
                 return "Username must be between 2 and 20 characters";
             }
 
-            var existingPlayerWithUsername = lobby.players.FirstOrDefault(player => player.username == username);
-            if (existingPlayerWithUsername != null && existingPlayerWithUsername.inGame) {
+            var existingPlayerWithUsername = lobby.Players.FirstOrDefault(player => player.Username == username);
+            if (existingPlayerWithUsername != null && existingPlayerWithUsername.InGame) {
                 return "Username is already taken";
             }
 
@@ -99,7 +99,7 @@ namespace liveorlive_server {
         }
 
         public static bool TryGetLobbyById(string? lobbyId, [NotNullWhen(true)] out Lobby? lobby) {
-            lobby = Lobbies.FirstOrDefault(lobby => lobby.id == lobbyId);
+            lobby = Lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
             return lobby != null;
         }
 

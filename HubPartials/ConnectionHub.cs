@@ -46,22 +46,23 @@ namespace liveorlive_server.HubPartials {
             // Could use ?? here, but using lobby.players.Contains seems iffy
             if (lobby.TryGetPlayerByUsername(username, out Player? player)) {
                 player.connectionId = Context.ConnectionId;
-                player.inGame = true;
+                player.InGame = true;
             } else {
-                player = new Player(lobby.Config, username, Context.ConnectionId, lobby.gameStarted);
-                lobby.players.Add(player);
-            }
-
-            if (lobby.players.Count == 1) {
-                lobby.host = username;
-                // Don't bother sending if we're the only player we'd be sending it to
-                await Clients.Group(Context.GetLobbyId()).HostChanged(null, username, "Host joined");
+                player = new Player(lobby.Config, username, Context.ConnectionId, lobby.GameStarted);
+                lobby.Players.Add(player);
             }
 
             // INFORM THE DEVELOPMENT TEAM. A NEW player HAS ARRIVED
             _connectionContexts[Context.ConnectionId] = Context;
             await Clients.OthersInGroup(lobbyId).PlayerJoined(player);
             await Clients.Caller.ConnectionSuccess();
+
+            if (lobby.Players.Count == 1) {
+                lobby.Host = username;
+                // Don't bother sending if we're the only player we'd be sending it to
+                await Clients.Group(Context.GetLobbyId()).HostChanged(null, username, "Host joined");
+            }
+
             await base.OnConnectedAsync();
         }
 
@@ -74,18 +75,18 @@ namespace liveorlive_server.HubPartials {
                 // Lobby is guarunteed to exist here
                 var lobby = Context.GetLobby();
                 // Remove entirely if game hasn't started
-                if (!lobby.gameStarted) {
-                    lobby.players.Remove(player);
+                if (!lobby.GameStarted) {
+                    lobby.Players.Remove(player);
                 // Otherwise mark as inactive
                 } else {
-                    player.inGame = false;
+                    player.InGame = false;
                 }
 
                 // Host transfer (find first player who isn't the one who just left, otherwise null)
-                if (lobby.host == player.username) {
-                    lobby.host = lobby.players.FirstOrDefault(p => p.inGame)?.username;
+                if (lobby.Host == player.Username) {
+                    lobby.Host = lobby.Players.FirstOrDefault(p => p.InGame)?.Username;
                     // player.username is previous host
-                    await Clients.Group(Context.GetLobbyId()).HostChanged(player.username, lobby.host, "Host disconnected");
+                    await Clients.Group(Context.GetLobbyId()).HostChanged(player.Username, lobby.Host, "Host disconnected");
                 }
 
             }
@@ -95,12 +96,16 @@ namespace liveorlive_server.HubPartials {
 
         public async Task KickPlayer(string username) {
             var lobby = Context.GetLobby();
-            if (lobby.host != Context.GetPlayer().username) {
-                await Clients.Caller.ActionFailed("You must be the host to kick a player");
+            if (lobby.Host != Context.GetPlayer().Username) {
+                await Clients.Caller.ActionFailed("You must be the host to do that!");
                 return;
             }
             if (!lobby.TryGetPlayerByUsername(username, out var player)) {
-                await Clients.Caller.ActionFailed($"Couldn't find {username}");
+                await Clients.Caller.ActionFailed($"Failed to kick player: couldn't find {username} (are they still in the game?)");
+                return;
+            }
+            if (lobby.Host == username) {
+                await Clients.Caller.ActionFailed("You can't kick yourself!");
                 return;
             }
             await Clients.Group(Context.GetLobbyId()).PlayerKicked(username);
@@ -109,16 +114,16 @@ namespace liveorlive_server.HubPartials {
 
         public async Task SetHost(string username) {
             var lobby = Context.GetLobby();
-            if (lobby.host != Context.GetPlayer().username) {
-                await Clients.Caller.ActionFailed("You must be the host to transfer it to another player");
+            if (lobby.Host != Context.GetPlayer().Username) {
+                await Clients.Caller.ActionFailed("You must be the host to do that!");
                 return;
             }
             if (!lobby.TryGetPlayerByUsername(username, out var _)) {
-                await Clients.Caller.ActionFailed($"Couldn't find {username}");
+                await Clients.Caller.ActionFailed($"Failed to transfer host: Couldn't find {username}");
                 return;
             }
-            await Clients.Group(Context.GetLobbyId()).HostChanged(lobby.host, username, "Host transferred");
-            lobby.host = username;
+            await Clients.Group(Context.GetLobbyId()).HostChanged(lobby.Host, username, "Host transferred");
+            lobby.Host = username;
         }
     }
 }

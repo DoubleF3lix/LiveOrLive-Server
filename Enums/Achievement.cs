@@ -32,6 +32,8 @@ namespace liveorlive_server.Enums {
         CutOff,
         [Description("Shoot yourself with 25% odds for survival")]
         Deathwish,
+        [Description("Successfully shoot someone else with less than 50% odds")]
+        FatChance,
         [Description("Use every single item at least once in a game")]
         WasteNot,
         [Description("Use all your items in a single turn (at least 3)")]
@@ -44,11 +46,13 @@ namespace liveorlive_server.Enums {
         HatTrick,
         [Description("Eliminate 2 players in a single round")]
         Sweep,
+        [Description("With only one life left, skip yourself by killing another skipped player")]
+        InsurancePolicy,
         [Description("Fire 3 rounds in a single turn")]
         RealFortune,
         [Description("Survive 6 self-shots in a single game")]
         RussianRoulette,
-        [Description("With 2 people left, shoot the other player with a blank round")]
+        [Description("With 1 other player left, shoot the other player with a blank round")]
         ImmediateDanger,
         [Description("Shoot 3 people with blank rounds consecutively")]
         Stormtrooper,
@@ -101,7 +105,7 @@ namespace liveorlive_server.Enums {
         [Description("Steal someone's skip and use it on them")]
         Opportunist, // "Opportunity", but said in a high pitched opera-like voice
         [Description("Hold onto a +1 Life item for 2 turns in a row")]
-        InsurancePolicy,
+        EscapeHatch,
         [Description("Reverse the turn order and shoot the person who was supposed to go next")]
         BoomerangBullet,
         [Description("Steal an Adrenaline from someone with only one life left")]
