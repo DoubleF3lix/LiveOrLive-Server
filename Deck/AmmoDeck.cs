@@ -2,7 +2,7 @@
 
 namespace liveorlive_server.Deck
 {
-    public class AmmoDeck(Config config) : Deck<BulletType>(config)
+    public class AmmoDeck(Settings config) : Deck<BulletType>(config)
     {
         public int BlankCount { get; private set; } = 0;
         public int LiveCount { get; private set; } = 0;

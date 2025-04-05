@@ -40,17 +40,10 @@ namespace liveorlive_server.HubPartials {
             Context.SetLobbyId(lobbyId);
             await Groups.AddToGroupAsync(Context.ConnectionId, lobbyId);
 
-            // Check if we need to reassign player object
             // ValidateLobbyConnectionInfo ensures that there is no in-game player in the lobby with this username
             // So either they exist and we're good to take them, or they don't and we make a new one
-            // Could use ?? here, but using lobby.players.Contains seems iffy
-            if (lobby.TryGetPlayerByUsername(username, out Player? player)) {
-                player.connectionId = Context.ConnectionId;
-                player.InGame = true;
-            } else {
-                player = new Player(lobby.Config, username, Context.ConnectionId, lobby.GameStarted);
-                lobby.Players.Add(player);
-            }
+            // This handles assigning an existing player or creating a new one
+            var player = lobby.AddPlayer(Context.ConnectionId, username);
 
             // INFORM THE DEVELOPMENT TEAM. A NEW player HAS ARRIVED
             _connectionContexts[Context.ConnectionId] = Context;
@@ -122,7 +115,7 @@ namespace liveorlive_server.HubPartials {
                 await Clients.Caller.ActionFailed($"Failed to transfer host: Couldn't find {username}");
                 return;
             }
-            await Clients.Group(Context.GetLobbyId()).HostChanged(lobby.Host, username, "Host transferred");
+            await Clients.Group(Context.GetLobbyId()).HostChanged(lobby.Host, username, "Host was transferred");
             lobby.Host = username;
         }
     }

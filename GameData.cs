@@ -20,8 +20,8 @@ namespace liveorlive_server
 
         public GameData() {
             this.turnOrderManager = new TurnOrderManager();
-            this.itemDeck = new ItemDeck(new Config(), 0);
-            this.ammoDeck = new AmmoDeck(new Config());
+            this.itemDeck = new ItemDeck(new Settings());
+            this.ammoDeck = new AmmoDeck(new Settings());
         }
 
         public void StartGame() {

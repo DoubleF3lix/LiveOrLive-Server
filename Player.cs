@@ -4,7 +4,7 @@ using Tapper;
 namespace liveorlive_server
 {
     [TranspilationSource]
-    public class Player(Config config, string username, string connectionId, bool isSpectator = false) {
+    public class Player(Settings config, string username, string connectionId, bool isSpectator = false) {
         public string Username { get; set; } = username;
         public string connectionId = connectionId;
 

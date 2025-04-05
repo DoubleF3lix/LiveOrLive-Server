@@ -2,7 +2,7 @@
     public class CreateLobbyRequest {
         public required string Username {  get; set; }
         public string? LobbyName { get; set; }
-        public Config Config { get; set; } = new Config();
+        public Settings Config { get; set; } = new Settings();
     }
 
     public class CreateLobbyResponse {

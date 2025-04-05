@@ -1,8 +1,8 @@
 ﻿namespace liveorlive_server.Deck
 {
-    public abstract class Deck<T>(Config config)
+    public abstract class Deck<T>(Settings config)
     {
-        protected Config config = config;
+        protected Settings config = config;
         protected List<T> deck = [];
 
         public abstract void Refresh();
@@ -12,8 +12,7 @@
         // Fisher-Yates
         public void Shuffle() {
             Random random = new();
-            for (int i = 0; i < deck.Count; i++)
-            {
+            for (int i = 0; i < deck.Count; i++) {
                 int j = random.Next(i, deck.Count);
                 (deck[j], deck[i]) = (deck[i], deck[j]);
             }

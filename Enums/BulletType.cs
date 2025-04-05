@@ -1,10 +1,8 @@
 ﻿using Tapper;
 
-namespace liveorlive_server.Enums
-{
+namespace liveorlive_server.Enums {
     [TranspilationSource]
-    public enum BulletType
-    {
+    public enum BulletType {
         Blank,
         Live
     }

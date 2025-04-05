@@ -86,9 +86,9 @@ namespace liveorlive_server.Enums {
         SoloAct,
         [Description("Win the game with 5 unused items")]
         Overstock,
-        [Description("Use a double damage on someone with only one life left")]
+        [Description("Use more damage than necessary to kill someone")]
         Overkill,
-        [Description("Use a double damage on someone with only one life left and win the game")]
+        [Description("Use more damage than necessary to kill someone and win the game")]
         Overoverkill,
         [Description("Use a Chamber Check and shoot yourself with a live round")]
         Amnesia,
@@ -126,6 +126,12 @@ namespace liveorlive_server.Enums {
         FullRotation,
         [Description("Shoot someone who gave you a life with their last turn")]
         ColdHeart,
+        [Description("Shoot yourself with a live round on accident due to all opponents having Ricochet")]
+        ReboundRelationship,
+        [Description("Avoid getting shot with Ricochet by skipping yourself")]
+        Ricochad,
+        [Description("Get killed due to a ricochet")]
+        HoldMeCloserEd,
         [Description("With only two players left at one life each and a 1/1 chamber, kill your opponent and win the game without using any items")]
         UltimateVictory
     }

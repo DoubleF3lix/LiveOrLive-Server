@@ -66,6 +66,9 @@ namespace liveorlive_server {
 
                 return Results.Ok();
             });
+            app.MapGet("/default-settings", () => {
+                return JsonSerializer.Serialize(new Settings());
+            });
         }
 
         public static string? ValidateLobbyConnectionInfo(string? lobbyId, string? username) {

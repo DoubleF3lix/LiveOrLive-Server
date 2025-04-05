@@ -4,27 +4,23 @@ namespace liveorlive_server.Deck
 {
     // This deck seeks to emulate an actual deck of cards
     // That is, players can hoard items, and only cards that are not in play can be 
-    public class ItemDeck : Deck<Item>
-    {
+    public class ItemDeck(Settings config) : Deck<Item>(config) {
         const int ITEM_PER_DECK = 4; // Number of each item per deck
 
-        private readonly int playerCount;
-
-        public ItemDeck(Config config, int playerCount) : base(config) {
-            this.playerCount = playerCount;
-
-            int uniqueItemCount = Enum.GetNames(typeof(Item)).Length;
-            int itemsPerDeck = uniqueItemCount * ITEM_PER_DECK;
+        public void Populate(int playerCount) {
+            var enabledItems = this.config.GetEnabledItems().ToList();
+            var uniqueItemCount = enabledItems.Count;
+            var itemsPerDeck = uniqueItemCount * ITEM_PER_DECK;
             // Decks needed is total max items across all players divided by how many items are in one deck, ceiling'd
-            int deckCount = (int)Math.Ceiling((double)(this.config.MaxItems * this.playerCount) / itemsPerDeck);
+            var deckCount = (int)Math.Ceiling((double)(this.config.MaxItems * playerCount) / itemsPerDeck);
 
-            for (int i = 0; i < uniqueItemCount; i++)
-            {
-                for (int j = 0; j < ITEM_PER_DECK * deckCount; j++)
-                {
-                    deck.Add((Item)i);
+            foreach (var item in enabledItems) {
+                for (int j = 0; j < ITEM_PER_DECK * deckCount; j++) {
+                    this.deck.Add(item);
                 }
             }
+
+            Shuffle();
         }
 
         public override void Refresh() {

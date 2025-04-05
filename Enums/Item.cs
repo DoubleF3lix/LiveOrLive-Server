@@ -1,18 +1,17 @@
 ﻿using Tapper;
 
-namespace liveorlive_server.Enums
-{
+namespace liveorlive_server.Enums {
     [TranspilationSource]
-    public enum Item
-    {
+    public enum Item {
         ReverseTurnOrder,
         RackChamber,
         ExtraLife,
         Pickpocket,
-        Adrenaline,
+        LifeGamble,
         Invert,
         ChamberCheck,
         DoubleDamage,
         Skip,
+        Richochet
     }
 }
