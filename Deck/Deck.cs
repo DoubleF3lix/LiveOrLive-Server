@@ -1,8 +1,8 @@
 ﻿namespace liveorlive_server.Deck
 {
-    public abstract class Deck<T>(Settings config)
+    public abstract class Deck<T>(Settings settings)
     {
-        protected Settings config = config;
+        protected Settings settings = settings;
         protected List<T> deck = [];
 
         public abstract void Refresh();

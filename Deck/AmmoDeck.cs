@@ -2,7 +2,7 @@
 
 namespace liveorlive_server.Deck
 {
-    public class AmmoDeck(Settings config) : Deck<BulletType>(config)
+    public class AmmoDeck(Settings settings) : Deck<BulletType>(settings)
     {
         public int BlankCount { get; private set; } = 0;
         public int LiveCount { get; private set; } = 0;
@@ -11,8 +11,8 @@ namespace liveorlive_server.Deck
             deck.Clear();
 
             Random random = new();
-            BlankCount = random.Next(1, config.MaxBlankRounds);
-            LiveCount = random.Next(1, config.MaxLiveRounds);
+            BlankCount = random.Next(1, settings.MaxBlankRounds);
+            LiveCount = random.Next(1, settings.MaxLiveRounds);
 
             for (int i = 0; i < BlankCount; i++)
             {

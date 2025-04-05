@@ -11,7 +11,7 @@ namespace liveorlive_server {
         public bool Hidden { get; set; } = false;
         public long CreationTime { get; } = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
 
-        public Settings Config { get; private set; }
+        public Settings Settings { get; private set; }
         public List<Player> Players { get; private set; } = [];
 
         public string? Host { get; set; }
@@ -26,22 +26,22 @@ namespace liveorlive_server {
         public List<ChatMessage> ChatMessages => this.chat.Messages;
         public ChatMessage AddChatMessage(string author, string content) => this.chat.AddMessage(author, content); 
 
-        public Lobby(Settings? config = null, string? name = null) {
-            this.Config = config ?? new Settings();
+        public Lobby(Settings? settings = null, string? name = null) {
+            this.Settings = settings ?? new Settings();
             this.Name = name ?? this.Id;
             this.ResetManagers();
         }
 
         [MemberNotNull(nameof(turnOrderManager), nameof(itemDeck), nameof(ammoDeck))]
         public void ResetManagers() {
-            this.itemDeck = new ItemDeck(this.Config);
-            this.ammoDeck = new AmmoDeck(this.Config);
+            this.itemDeck = new ItemDeck(this.Settings);
+            this.ammoDeck = new AmmoDeck(this.Settings);
             this.turnOrderManager = new TurnOrderManager();
         }
 
         public void SetConfig(Settings config) {
             if (!this.GameStarted) {
-                this.Config = config;
+                this.Settings = config;
             }
         }
 
@@ -55,7 +55,7 @@ namespace liveorlive_server {
                 player.InGame = true;
                 player.connectionId = connectionId;
             } else {
-                player = new Player(this.Config, username, connectionId, this.GameStarted);
+                player = new Player(this.Settings, username, connectionId, this.GameStarted);
                 this.Players.Add(player);
                 this.itemDeck.Populate(this.Players.Count); // TODO temp
                 this.itemDeck.DealItemsToPlayer(player);
