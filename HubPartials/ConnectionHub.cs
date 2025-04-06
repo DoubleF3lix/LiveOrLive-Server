@@ -82,6 +82,7 @@ namespace liveorlive_server.HubPartials {
                     await Clients.Group(Context.GetLobbyId()).HostChanged(player.Username, lobby.Host, "Host disconnected");
                 }
 
+                await Clients.Group(Context.GetLobbyId()).PlayerLeft(player.Username);
             }
             _connectionContexts.Remove(Context.ConnectionId, out _);
             await base.OnDisconnectedAsync(exception);

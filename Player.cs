@@ -1,4 +1,5 @@
 ﻿using liveorlive_server.Enums;
+using System.Text.Json.Serialization;
 using Tapper;
 
 namespace liveorlive_server
@@ -6,6 +7,7 @@ namespace liveorlive_server
     [TranspilationSource]
     public class Player(Settings config, string username, string connectionId, bool isSpectator = false) {
         public string Username { get; set; } = username;
+        [JsonIgnore]
         public string connectionId = connectionId;
 
         // Needed to keep track of players who have left without kicking them for disconnects
@@ -14,8 +16,8 @@ namespace liveorlive_server
 
         public int Lives { get; set; } = config.DefaultLives;
         public List<Item> Items { get; set; } = new(config.MaxItems);
-        public bool IsSkipped { get; set; } = false;
-        public bool IsRicochet { get; set; } = false;
+        public bool IsSkipped { get; set; } = true;
+        public bool IsRicochet { get; set; } = true;
 
         public readonly long joinTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
 

@@ -15,7 +15,7 @@ namespace liveorlive_server {
         public List<Player> Players { get; private set; } = [];
 
         public string? Host { get; set; }
-        public bool GameStarted { get; set; } = new Random().Next(2) == 0; // false
+        public bool GameStarted { get; set; } = false;
 
         private readonly Chat chat = new();
         private TurnOrderManager turnOrderManager;
