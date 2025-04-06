@@ -15,6 +15,7 @@ namespace liveorlive_server
         public int Lives { get; set; } = config.DefaultLives;
         public List<Item> Items { get; set; } = new(config.MaxItems);
         public bool IsSkipped { get; set; } = false;
+        public bool IsRicochet { get; set; } = false;
 
         public readonly long joinTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
 
