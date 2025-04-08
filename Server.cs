@@ -32,10 +32,13 @@ namespace liveorlive_server {
 
             app.MapHub<LiveOrLiveHub>("");
 
-            Lobbies.Add(new Lobby(name: "Jellyfish Sparkle"));
-            Lobbies.Add(new Lobby(name: "Onion Creek"));
-            Lobbies.Add(new Lobby());
-            Lobbies.Add(new Lobby(name: "Gambling Addiction"));
+            var onionCreek = CreateLobby(name: "Onion Creek");
+            onionCreek.AddPlayer(null, "feef1");
+            onionCreek.AddPlayer(null, "feef2");
+            onionCreek.AddPlayer(null, "feef3");
+            onionCreek.AddPlayer(null, "feef4");
+            onionCreek.Host = null;
+            CreateLobby(name: "Gambling Addiction");
 
             app.MapGet("/lobbies", () => { return JsonSerializer.Serialize(Lobbies.Where(lobby => !lobby.Hidden), JSON_OPTIONS); });
             app.MapPost("/lobbies", (CreateLobbyRequest request) => {
@@ -48,7 +51,7 @@ namespace liveorlive_server {
 
                 // Config is default initialized by auto-binding magic if it isn't set
                 // And if any properties are missing, they get their default values too
-                var newLobby = new Lobby(request.Config, request.LobbyName);
+                var newLobby = CreateLobby(request.Settings, request.LobbyName);
                 Lobbies.Add(newLobby);
 
                 return Results.Ok(new CreateLobbyResponse { LobbyId = newLobby.Id });
@@ -90,6 +93,12 @@ namespace liveorlive_server {
 
             // No error
             return null;
+        }
+
+        public static Lobby CreateLobby(Settings? settings = null, string? name = null) {
+            var newLobby = new Lobby(settings, name);
+            Lobbies.Add(newLobby);
+            return newLobby;
         }
 
         public static Lobby GetLobbyById(string lobbyId) {

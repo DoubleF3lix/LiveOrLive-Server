@@ -1,36 +1,31 @@
 ﻿namespace liveorlive_server {
-    public class TurnOrderManager {
-        public string CurrentTurn {
-            get {
-                if (this.currentTurnIndex < 0) {
-                    return "";
-                }
-                return this.turnOrder[this.currentTurnIndex];
-            }
-        }
-
-        private List<string> turnOrder = []; // Usernames
+    public class TurnOrderManager(List<Player>? players) {
+        private readonly List<Player> players = players ?? [];
         private int currentTurnIndex = -1;
 
-        public void Populate(List<Player> players) {
-            this.turnOrder = players.Where(player => player.InGame == true).Select(player => player.Username).ToList();
+        public List<string> TurnOrder => this.players.Where(p => !p.IsSpectator).Select(p => p.Username).ToList();
+        public string? CurrentTurn {
+            get {
+                if (this.currentTurnIndex < 0) {
+                    return null;
+                }
+
+                return this.TurnOrder[this.currentTurnIndex];
+            }
         }
 
         public void Advance() {
-            this.currentTurnIndex = (this.currentTurnIndex + 1) % this.turnOrder.Count;
-        }
-
-        public void EliminatePlayer(string username) {
-            int index = this.turnOrder.IndexOf(username);
-            if (index != -1) {
-                this.turnOrder.RemoveAt(index);
-                if (index < this.currentTurnIndex) {
-                    this.currentTurnIndex--;
-                } else if (index == this.currentTurnIndex) {
-                    // If the current player is eliminated, adjust to the next player's turn
-                    this.currentTurnIndex %= this.turnOrder.Count;
-                }
+            // Just in case so we don't lock the server down
+            if (players.All(p => p.Lives <= 0)) {
+                currentTurnIndex = -1;
+                return;
             }
+
+            Player? currentPlayerForTurn;
+            do {
+                this.currentTurnIndex = (this.currentTurnIndex + 1) % this.players.Count;
+                currentPlayerForTurn = this.players[currentTurnIndex];
+            } while (currentPlayerForTurn.Lives <= 0);
         }
     }
 }

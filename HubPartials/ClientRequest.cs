@@ -24,14 +24,13 @@ namespace liveorlive_server.HubPartials
 
     [Hub]
     public interface IBaseGameRequest {
+        Task StartGame();
         Task GetLobbyDataRequest();
         Task ShootPlayer(string target);
     }
 
     [Hub]
-    public interface IGenericRequest {
-
-    }
+    public interface IGenericRequest {}
 
     [Hub]
     public interface IItemRequest {

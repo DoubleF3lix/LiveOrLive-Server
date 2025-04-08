@@ -46,9 +46,10 @@ namespace liveorlive_server {
         public bool AllowSelfSkip { get; set; } = false;
 
         public bool LoseSkipAfterRound { get; set; } = true;
-        public bool CopySkipOnKill { get; set; } = true;
         public bool RicochetIgnoreSkippedPlayers { get; set; } = true;
+        public int SuddenDeathActivationPoint = 60; // Percentage of players eliminated (players left on activation is (1 - N))
 
+        public bool CopySkipOnKill { get; set; } = true;
         public bool LootItemsOnKill { get; set; } = false;
         public int MaxLootItemsOnKill { get; set; } = 2;
         public bool AllowLootItemsExceedMax { get; set; } = false;
@@ -62,6 +63,7 @@ namespace liveorlive_server {
          * AllowLifeGambleExceedMax = true lets players go past MaxLives with no upper bound. If false, Life Gamble items can always be used, but a successful gamble will be capped at MaxItems
          * AllowSelfSkip = true, AllowSequentialSkips = false, and LoseSkipAfterRound = true allow for players to tactically skip themselves at a round end if they want a guarunteed turn next round
          * RicochetIgnoreSkippedPlayers = true has the potential to allow a player to shoot themselves on accident if everyone else is skipped
+         * Sudden Death can be disabled with SuddenDeathActivationPoint = 0, and this value is useless if AllowPlayerRevival = false
          */
         public void Normalize() {
             this.MaxPlayers = Math.Clamp(this.MaxPlayers, 2, 100);

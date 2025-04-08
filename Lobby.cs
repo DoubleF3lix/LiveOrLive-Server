@@ -22,6 +22,9 @@ namespace liveorlive_server {
         private ItemDeck itemDeck;
         private AmmoDeck ammoDeck;
 
+        public List<string> TurnOrder => turnOrderManager.TurnOrder;
+        public string? CurrentTurn => turnOrderManager.CurrentTurn;
+
         [JsonIgnore]
         public List<ChatMessage> ChatMessages => this.chat.Messages;
         public ChatMessage AddChatMessage(string author, string content) => this.chat.AddMessage(author, content); 
@@ -36,7 +39,7 @@ namespace liveorlive_server {
         public void ResetManagers() {
             this.itemDeck = new ItemDeck(this.Settings);
             this.ammoDeck = new AmmoDeck(this.Settings);
-            this.turnOrderManager = new TurnOrderManager();
+            this.turnOrderManager = new TurnOrderManager(null);
         }
 
         public void SetConfig(Settings config) {
@@ -45,9 +48,26 @@ namespace liveorlive_server {
             }
         }
 
+        public void StartGame() {
+            this.GameStarted = true;
+            this.ResetManagers();
+            this.itemDeck.Populate(this.Players.Count);
+        }
+
+        public void NewRound() {
+            this.ammoDeck.Refresh();
+            this.itemDeck.Refresh();
+
+            // TODO return ammo deck counts
+        }
+
+        public void NewTurn() {
+            this.turnOrderManager.Advance();
+        }
+
         // Handles assigning an existing player, otherwise makes a new one
         // Callers of this should check the player doesn't exist first
-        public Player AddPlayer(string connectionId, string username) {
+        public Player AddPlayer(string? connectionId, string username) {
             if (this.TryGetPlayerByUsername(username, out var player)) {
                 if (player.InGame) {
                     throw new Exception("Player already exists and is in-game");
@@ -55,7 +75,7 @@ namespace liveorlive_server {
                 player.InGame = true;
                 player.connectionId = connectionId;
             } else {
-                player = new Player(this.Settings, username, connectionId, this.GameStarted);
+                player = new Player(this.Settings, username, connectionId, this.Players.Count > 3);
                 this.Players.Add(player);
                 this.itemDeck.Populate(this.Players.Count); // TODO temp
                 this.itemDeck.DealItemsToPlayer(player);

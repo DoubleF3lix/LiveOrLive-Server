@@ -50,9 +50,8 @@ namespace liveorlive_server.HubPartials {
             await Clients.OthersInGroup(lobbyId).PlayerJoined(player);
             await Clients.Caller.ConnectionSuccess();
 
-            if (lobby.Players.Count == 1) {
+            if (lobby.Host == null) {
                 lobby.Host = username;
-                // Don't bother sending if we're the only player we'd be sending it to
                 await Clients.Group(Context.GetLobbyId()).HostChanged(null, username, "Host joined");
             }
 
@@ -73,6 +72,7 @@ namespace liveorlive_server.HubPartials {
                 // Otherwise mark as inactive
                 } else {
                     player.InGame = false;
+                    player.connectionId = null;
                 }
 
                 // Host transfer (find first player who isn't the one who just left, otherwise null)

@@ -11,7 +11,7 @@ namespace liveorlive_server
         public bool gameStarted = false;
         public readonly string gameID = Guid.NewGuid().ToString();
 
-        public string CurrentTurn { get { return this.turnOrderManager.CurrentTurn; } }
+        public string? CurrentTurn { get { return this.turnOrderManager.CurrentTurn; } }
         public int damageForShot = 1;
 
         private readonly TurnOrderManager turnOrderManager;
@@ -19,13 +19,13 @@ namespace liveorlive_server
         private readonly AmmoDeck ammoDeck;
 
         public GameData() {
-            this.turnOrderManager = new TurnOrderManager();
+            this.turnOrderManager = new TurnOrderManager(null);
             this.itemDeck = new ItemDeck(new Settings());
             this.ammoDeck = new AmmoDeck(new Settings());
         }
 
         public void StartGame() {
-            this.turnOrderManager.Populate(this.players);
+            //this.turnOrderManager.Populate(this.players);
             this.gameStarted = true;
         }
 
@@ -79,7 +79,7 @@ namespace liveorlive_server
         // Remove player from the turnOrder list, adjusting the index backwards if necessary to avoid influencing order
         // Also marks as spectator
         public void EliminatePlayer(Player player) {
-            this.turnOrderManager.EliminatePlayer(player.Username);
+            //this.turnOrderManager.EliminatePlayer(player.Username);
             player.IsSpectator = true;
             player.Lives = 0;
         }
