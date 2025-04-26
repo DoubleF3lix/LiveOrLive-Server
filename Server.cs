@@ -40,7 +40,7 @@ namespace liveorlive_server {
             onionCreek.Host = null;
             CreateLobby(name: "Gambling Addiction");
 
-            app.MapGet("/lobbies", () => { return JsonSerializer.Serialize(Lobbies.Where(lobby => !lobby.Hidden), JSON_OPTIONS); });
+            app.MapGet("/lobbies", () => { return JsonSerializer.Serialize(Lobbies.Where(lobby => !lobby.Private), JSON_OPTIONS); });
             app.MapPost("/lobbies", (CreateLobbyRequest request) => {
                 if (request.Username == null) {
                     return Results.BadRequest("Username not supplied");

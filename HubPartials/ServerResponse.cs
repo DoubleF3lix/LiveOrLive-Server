@@ -18,7 +18,7 @@ namespace liveorlive_server.HubPartials
 
     [Receiver]
     public interface IGameLogResponse {
-        Task GetGameLogResponse(GameLogMessage[] messages);
+        Task GetGameLogResponse(List<GameLogMessage> messages);
         Task GameLogUpdate(GameLogMessage message);
     }
 
@@ -54,11 +54,12 @@ namespace liveorlive_server.HubPartials
         Task ReverseTurnOrderItemUsed();
         Task RackChamberItemUsed();
         Task ExtraLifeItemUsed(string target);
-        Task PickpocketItemUsed(string target, Item item);
-        Task AdrenalineItemUsed(int lifeChange);
+        Task PickpocketItemUsed(string target, Item item, string? itemTarget);
+        Task LifeGambleItemUsed(int lifeChange);
         Task InvertItemUsed();
         Task ChamberCheckItemUsed(BulletType bulletType);
         Task DoubleDamageItemUsed();
         Task SkipItemUsed(string target);
+        Task RicochetItemUsed(string? target);
     }
 }

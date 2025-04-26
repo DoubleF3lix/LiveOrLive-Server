@@ -8,7 +8,7 @@ namespace liveorlive_server {
     public class Lobby {
         public string Id { get; set; } = GenerateId();
         public string Name { get; set; }
-        public bool Hidden { get; set; } = false;
+        public bool Private => this.Settings.Private;
         public long CreationTime { get; } = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
 
         public Settings Settings { get; private set; }
@@ -18,6 +18,7 @@ namespace liveorlive_server {
         public bool GameStarted { get; set; } = false;
 
         private readonly Chat chat = new();
+        private readonly GameLog gameLog = new();
         private TurnOrderManager turnOrderManager;
         private ItemDeck itemDeck;
         private AmmoDeck ammoDeck;
@@ -27,11 +28,17 @@ namespace liveorlive_server {
 
         [JsonIgnore]
         public List<ChatMessage> ChatMessages => this.chat.Messages;
-        public ChatMessage AddChatMessage(string author, string content) => this.chat.AddMessage(author, content); 
+        [JsonIgnore]
+        public List<GameLogMessage> GameLogMessages => this.gameLog.Messages;
+        [JsonIgnore]
+        public List<GameLogMessage> RecentGameLogMessages => this.gameLog.GetLastMessages(4);
+
+        public ChatMessage AddChatMessage(string author, string content) => this.chat.AddMessage(author, content);
+        public GameLogMessage AddGameLogMessage(string content) => this.gameLog.AddMessage(content);
 
         public Lobby(Settings? settings = null, string? name = null) {
             this.Settings = settings ?? new Settings();
-            this.Name = name ?? this.Id;
+            this.Name = string.IsNullOrEmpty(name) ? this.Id : name;
             this.ResetManagers();
         }
 
@@ -51,6 +58,7 @@ namespace liveorlive_server {
         public void StartGame() {
             this.GameStarted = true;
             this.ResetManagers();
+            this.gameLog.Clear();
             this.itemDeck.Populate(this.Players.Count);
         }
 
@@ -77,8 +85,6 @@ namespace liveorlive_server {
             } else {
                 player = new Player(this.Settings, username, connectionId, this.Players.Count > 3);
                 this.Players.Add(player);
-                this.itemDeck.Populate(this.Players.Count); // TODO temp
-                this.itemDeck.DealItemsToPlayer(player);
             }
             return player;
         }

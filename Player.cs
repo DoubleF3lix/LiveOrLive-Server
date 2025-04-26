@@ -15,8 +15,8 @@ namespace liveorlive_server {
 
         public int Lives { get; set; } = config.DefaultLives;
         public List<Item> Items { get; set; } = new(config.MaxItems);
-        public bool IsSkipped { get; set; } = true;
-        public bool IsRicochet { get; set; } = true;
+        public bool IsSkipped { get; set; } = false;
+        public bool IsRicochet { get; set; } = false;
 
         public readonly long joinTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
 
@@ -26,14 +26,6 @@ namespace liveorlive_server {
 
         public bool Equals(Player player) {
             return this.Username == player.Username;
-        }
-
-        public override string ToString() {
-            return $"Player {{ username = \"{this.Username}\", lives = {this.Lives}, inGame = {this.InGame}, isSpectator = {this.IsSpectator}, isSkipped = {this.IsSkipped}, items = [{string.Join(", ", this.Items)}] }}";
-        }
-
-        public override int GetHashCode() {
-            throw new NotImplementedException();
         }
     }
 }

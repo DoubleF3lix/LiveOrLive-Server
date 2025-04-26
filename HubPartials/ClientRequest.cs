@@ -38,10 +38,11 @@ namespace liveorlive_server.HubPartials
         Task UseRackChamberItem();
         Task UseExtraLifeItem(string target);
         Task UsePickpocketItem(string target, Item item, string? itemTarget);
-        Task UseAdrenalineItem();
+        Task UseLifeGambleItem();
         Task UseInvertItem();
         Task UseChamberCheckItem();
         Task UseDoubleDamageItem();
         Task UseSkipItem(string target);
+        Task UseRicochetItem(string target);
     }
 }

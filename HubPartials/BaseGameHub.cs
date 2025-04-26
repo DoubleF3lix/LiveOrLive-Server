@@ -9,6 +9,10 @@ namespace liveorlive_server.HubPartials {
                 await Clients.Caller.ActionFailed("You must be the host to do that!");
                 return;
             }
+            if (lobby.Players.Count(player => !player.IsSpectator && player.InGame) < 2) {
+                await Clients.Caller.ActionFailed("There must be at least 2 non-spectators to start a game");
+                return;
+            }
             lobby.StartGame();
             await Clients.Group(Context.GetLobbyId()).GameStarted();
         }
