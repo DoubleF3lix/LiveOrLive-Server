@@ -11,7 +11,7 @@ namespace liveorlive_server
         public bool gameStarted = false;
         public readonly string gameID = Guid.NewGuid().ToString();
 
-        public string? CurrentTurn { get { return this.turnOrderManager.CurrentTurn; } }
+        public Player CurrentTurn { get { return this.turnOrderManager.PlayerForCurrentTurn; } }
         public int damageForShot = 1;
 
         private readonly TurnOrderManager turnOrderManager;
@@ -64,7 +64,7 @@ namespace liveorlive_server
         //}
 
         public Player? GetCurrentPlayerForTurn() {
-            return this.GetPlayerByUsername(this.turnOrderManager.CurrentTurn);
+            return this.GetPlayerByUsername(this.turnOrderManager.PlayerForCurrentTurn.Username);
         }
 
         public List<Player> GetActivePlayers() {

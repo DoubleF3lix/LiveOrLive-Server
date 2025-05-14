@@ -5,7 +5,12 @@ using System.Collections.Concurrent;
 
 namespace liveorlive_server.HubPartials {
     public partial class LiveOrLiveHub : Hub<IHubServerResponse>, IConnectionRequest {
-        private static readonly ConcurrentDictionary<string, HubCallerContext> _connectionContexts = new();
+        private readonly ConcurrentDictionary<string, HubCallerContext> _connectionContexts = new();
+        private readonly Server _server;
+
+        public LiveOrLiveHub(Server server) {
+            this._server = server;
+        }
 
         public override async Task OnConnectedAsync() {
             await Console.Out.WriteLineAsync($"Connected: {Context.ConnectionId}");
@@ -21,7 +26,7 @@ namespace liveorlive_server.HubPartials {
             var lobbyId = context.GetStringQueryParam("lobbyId");
             var username = context.GetStringQueryParam("username");
 
-            var errorMessage = Server.ValidateLobbyConnectionInfo(lobbyId, username);
+            var errorMessage = this._server.ValidateLobbyConnectionInfo(lobbyId, username);
             if (errorMessage != null) {
                 await Clients.Caller.ConnectionFailed(errorMessage);
                 // Give some time to the client to handle disconnecting before we forcibly kick them out
@@ -34,7 +39,7 @@ namespace liveorlive_server.HubPartials {
             Debug.Assert(lobbyId != null);
             Debug.Assert(username != null);
 
-            var lobby = Server.GetLobbyById(lobbyId);
+            var lobby = this._server.GetLobbyById(lobbyId);
 
             // Store the lobbyId on the connection, and add this connection to the group
             Context.SetLobbyId(lobbyId);
@@ -46,7 +51,7 @@ namespace liveorlive_server.HubPartials {
             var player = lobby.AddPlayer(Context.ConnectionId, username);
 
             // INFORM THE DEVELOPMENT TEAM. A NEW player HAS ARRIVED
-            _connectionContexts[Context.ConnectionId] = Context;
+            this._connectionContexts[Context.ConnectionId] = Context;
             await Clients.OthersInGroup(lobbyId).PlayerJoined(player);
             await Clients.Caller.ConnectionSuccess();
 
@@ -63,9 +68,9 @@ namespace liveorlive_server.HubPartials {
             // https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-9.0#handle-events-for-a-connection
             await Console.Out.WriteLineAsync($"Disconnected: {Context.ConnectionId}");
             // Player may not exist if we got here on connection failure
-            if (Context.TryGetPlayer(out var player)) {
+            if (Context.TryGetPlayer(this._server, out var player)) {
                 // Lobby is guarunteed to exist here
-                var lobby = Context.GetLobby();
+                var lobby = Context.GetLobby(this._server);
                 // Remove entirely if game hasn't started
                 if (!lobby.GameStarted) {
                     lobby.Players.Remove(player);
@@ -84,17 +89,18 @@ namespace liveorlive_server.HubPartials {
 
                 await Clients.Group(Context.GetLobbyId()).PlayerLeft(player.Username);
             }
-            _connectionContexts.Remove(Context.ConnectionId, out _);
+            this._connectionContexts.Remove(Context.ConnectionId, out _);
             await base.OnDisconnectedAsync(exception);
         }
 
         public async Task KickPlayer(string username) {
-            var lobby = Context.GetLobby();
-            if (lobby.Host != Context.GetPlayer().Username) {
+            var lobby = Context.GetLobby(this._server);
+            if (lobby.Host != Context.GetPlayer(this._server).Username) {
                 await Clients.Caller.ActionFailed("You must be the host to do that!");
                 return;
             }
-            if (!lobby.TryGetPlayerByUsername(username, out var player)) {
+            // Make sure they're connected. In case we want to support bots or something in the future, edit this
+            if (!lobby.TryGetPlayerByUsername(username, out var player) || player.connectionId == null) {
                 await Clients.Caller.ActionFailed($"Failed to kick player: couldn't find {username} (are they still in the game?)");
                 return;
             }
@@ -103,21 +109,26 @@ namespace liveorlive_server.HubPartials {
                 return;
             }
             await Clients.Group(Context.GetLobbyId()).PlayerKicked(username);
-            _connectionContexts[player.connectionId].Abort();
+            this._connectionContexts[player.connectionId].Abort();
+            // Deleting is handled as this triggers OnDisconnectedAsync
         }
 
         public async Task SetHost(string username) {
-            var lobby = Context.GetLobby();
-            if (lobby.Host != Context.GetPlayer().Username) {
+            var lobby = Context.GetLobby(this._server);
+            if (lobby.Host != Context.GetPlayer(this._server).Username) {
                 await Clients.Caller.ActionFailed("You must be the host to do that!");
                 return;
             }
-            if (!lobby.TryGetPlayerByUsername(username, out var _)) {
-                await Clients.Caller.ActionFailed($"Failed to transfer host: Couldn't find {username}");
+            if (!lobby.TryGetPlayerByUsername(username, out var newHost)) {
+                await Clients.Caller.ActionFailed($"Failed to transfer host: couldn't find {username}");
                 return;
             }
-            await Clients.Group(Context.GetLobbyId()).HostChanged(lobby.Host, username, "Host was transferred");
+            if (!newHost.InGame) {
+                await Clients.Caller.ActionFailed($"Failed to transfer host: {username} is not in-game");
+                return;
+            }
             lobby.Host = username;
+            await Clients.Group(Context.GetLobbyId()).HostChanged(lobby.Host, username, "Host was transferred");
         }
     }
 }

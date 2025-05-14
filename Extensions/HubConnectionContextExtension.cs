@@ -12,14 +12,14 @@ namespace liveorlive_server.Extensions {
             return lobbyId != null;
         }
 
-        public static bool TryGetLobby(this HubCallerContext context, [NotNullWhen(true)] out Lobby? lobby) {
+        public static bool TryGetLobby(this HubCallerContext context, Server server, [NotNullWhen(true)] out Lobby? lobby) {
             lobby = null;
-            return context.TryGetLobbyId(out var lobbyId) && Server.TryGetLobbyById(lobbyId, out lobby);
+            return context.TryGetLobbyId(out var lobbyId) && server.TryGetLobbyById(lobbyId, out lobby);
         }
 
-        public static bool TryGetPlayer(this HubCallerContext context, [NotNullWhen(true)] out Player? player) {
+        public static bool TryGetPlayer(this HubCallerContext context, Server server, [NotNullWhen(true)] out Player? player) {
             player = null;
-            if (context.TryGetLobby(out var lobby)) {
+            if (context.TryGetLobby(server, out var lobby)) {
                 player = lobby.Players.FirstOrDefault(player => player.connectionId == context.ConnectionId);
             }
             return player != null;
@@ -32,15 +32,15 @@ namespace liveorlive_server.Extensions {
             throw new InvalidOperationException();
         }
 
-        public static Lobby GetLobby(this HubCallerContext context) {
-            if (context.TryGetLobby(out var result)) {
+        public static Lobby GetLobby(this HubCallerContext context, Server server) {
+            if (context.TryGetLobby(server, out var result)) {
                 return result;
             }
             throw new InvalidOperationException();
         }
 
-        public static Player GetPlayer(this HubCallerContext context) {
-            if (context.TryGetPlayer(out var result)) {
+        public static Player GetPlayer(this HubCallerContext context, Server server) {
+            if (context.TryGetPlayer(server, out var result)) {
                 return result;
             }
             throw new InvalidOperationException();

@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.SignalR;
 namespace liveorlive_server.HubPartials {
     public partial class LiveOrLiveHub : Hub<IHubServerResponse>, IBaseGameRequest {
         public async Task StartGame() {
-            var lobby = Context.GetLobby();
-            if (lobby.Host != Context.GetPlayer().Username) {
+            var lobby = Context.GetLobby(this._server);
+            if (lobby.Host != Context.GetPlayer(this._server).Username) {
                 await Clients.Caller.ActionFailed("You must be the host to do that!");
                 return;
             }
@@ -13,12 +13,20 @@ namespace liveorlive_server.HubPartials {
                 await Clients.Caller.ActionFailed("There must be at least 2 non-spectators to start a game");
                 return;
             }
+
             lobby.StartGame();
-            await Clients.Group(Context.GetLobbyId()).GameStarted();
+            await Clients.Group(lobby.Id).GameStarted();
+
+            var (blankCounts, liveCounts) = lobby.NewRound();
+            await Clients.Group(lobby.Id).NewRoundStarted(blankCounts, liveCounts);
+
+            // No skipped players on game start (hopefully, it's a safe assumption anyway)
+            lobby.NewTurn();
+            await Clients.Group(lobby.Id).TurnStarted(lobby.PlayerForCurrentTurn.Username);
         }
 
         public async Task GetLobbyDataRequest() {
-            var lobby = Context.GetLobby();
+            var lobby = Context.GetLobby(this._server);
             await Clients.Caller.GetLobbyDataResponse(lobby);
         }
 

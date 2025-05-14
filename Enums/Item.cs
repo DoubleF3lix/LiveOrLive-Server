@@ -7,7 +7,7 @@ namespace liveorlive_server.Enums {
         RackChamber,
         ExtraLife,
         Pickpocket,
-        LifeGamble,
+        LifeGamble, // Also called Adrenaline
         Invert,
         ChamberCheck,
         DoubleDamage,
