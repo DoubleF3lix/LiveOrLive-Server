@@ -9,7 +9,7 @@ namespace liveorlive_server.HubPartials {
         private readonly Server _server;
 
         public LiveOrLiveHub(Server server) {
-            this._server = server;
+            _server = server;
         }
 
         public override async Task OnConnectedAsync() {

@@ -1,49 +1,12 @@
-using liveorlive_server.Extensions;
-using liveorlive_server.HubPartials;
-using liveorlive_server.Models;
-using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 
 
 namespace liveorlive_server {
     public class Server {
-        private readonly JsonSerializerOptions JSON_OPTIONS = new() { IncludeFields = true, WriteIndented = true };
-        private readonly WebApplication _app;
-
-        private ServiceProvider _serviceProvider;
-        private IHubContext<LiveOrLiveHub, IHubServerResponse> _hubContext;
-
-        private readonly ConcurrentBag<Lobby> _lobbies = [];
+        public readonly ConcurrentBag<Lobby> Lobbies = [];
 
         public Server() {
-            var builder = WebApplication.CreateBuilder();
-            builder.Services.AddSignalR();
-            builder.Services.AddCors(options => {
-                options.AddPolicy(name: "_allowClientOrigins", policy => {
-                    policy
-                        .WithOrigins("http://doublef3lix.github.io", "https://doublef3lix.github.io")
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                });
-            });
-            // Allow it to be injected into the hubs
-            builder.Services.AddSingleton(typeof(Server), this);
-
-            // Passed to lobbies so they can call hub methods
-            this._serviceProvider = builder.Services.BuildServiceProvider();
-            this._hubContext = this._serviceProvider.GetRequiredService<IHubContext<LiveOrLiveHub, IHubServerResponse>>();
-
-            this._app = builder.Build();
-            this._app.UseRouting();
-            this._app.UseAuthorization();
-            this._app.UseCors("_allowClientOrigins");
-
-            this._app.MapHub<LiveOrLiveHub>("");
-
-
             // TODO remove
             //var onionCreek = CreateLobby(name: "Onion Creek");
             //onionCreek.AddPlayer(null, "feef1");
@@ -52,38 +15,6 @@ namespace liveorlive_server {
             //onionCreek.AddPlayer(null, "feef4");
             //onionCreek.Host = null;
             this.CreateLobby(name: "Gambling Addiction");
-
-            // Endpoints
-            _app.MapGet("/lobbies", () => { return JsonSerializer.Serialize(this._lobbies.Where(lobby => !lobby.Private), JSON_OPTIONS); });
-            _app.MapPost("/lobbies", (CreateLobbyRequest request) => {
-                if (request.Username == null) {
-                    return Results.BadRequest("Username not supplied");
-                }
-                if (request.Username.Length > 20 || request.Username.Length < 2) {
-                    return Results.BadRequest("Username must be between 2 and 20 characters");
-                }
-
-                // Config is default initialized by auto-binding magic if it isn't set
-                // And if any properties are missing, they get their default values too
-                var newLobby = this.CreateLobby(request.Settings, request.LobbyName);
-                this._lobbies.Add(newLobby);
-
-                return Results.Ok(new CreateLobbyResponse { LobbyId = newLobby.Id });
-            });
-            _app.MapGet("/verify-lobby-connection-info", (HttpContext context) => {
-                var lobbyId = context.GetStringQueryParam("lobbyId");
-                var username = context.GetStringQueryParam("username");
-
-                var errorMessage = this.ValidateLobbyConnectionInfo(lobbyId, username);
-                if (errorMessage != null) {
-                    return Results.BadRequest(errorMessage);
-                }
-
-                return Results.Ok();
-            });
-            _app.MapGet("/default-settings", () => {
-                return JsonSerializer.Serialize(new Settings());
-            });
         }
 
         public string? ValidateLobbyConnectionInfo(string? lobbyId, string? username) {
@@ -91,7 +22,7 @@ namespace liveorlive_server {
                 return "Missing lobbyId or username";
             }
 
-            var lobby = this._lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
+            var lobby = this.Lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
             if (lobby == null) {
                 return "Couldn't locate lobby";
             }
@@ -110,8 +41,8 @@ namespace liveorlive_server {
         }
 
         public Lobby CreateLobby(Settings? settings = null, string? name = null) {
-            var newLobby = new Lobby(_hubContext, this.GenerateId(), settings, name);
-            this._lobbies.Add(newLobby);
+            var newLobby = new Lobby(this.GenerateId(), settings, name);
+            this.Lobbies.Add(newLobby);
             return newLobby;
         }
 
@@ -123,7 +54,7 @@ namespace liveorlive_server {
         }
 
         public bool TryGetLobbyById(string? lobbyId, [NotNullWhen(true)] out Lobby? lobby) {
-            lobby = this._lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
+            lobby = this.Lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
             return lobby != null;
         }
 

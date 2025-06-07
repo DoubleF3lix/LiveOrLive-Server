@@ -1,10 +1,7 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using liveorlive_server.Deck;
-using liveorlive_server.HubPartials;
-using Microsoft.AspNetCore.SignalR;
+using liveorlive_server.Enums;
 using Tapper;
 
 namespace liveorlive_server {
@@ -50,14 +47,9 @@ namespace liveorlive_server {
         /// </summary>
         public List<string> TurnOrder => _turnOrderManager.TurnOrder;
         /// <summary>
-        /// Wrapper around <c>TurnOrderManager.PlayerForCurrentTurn</c>. Not sent to clients.
+        /// Wrapper around <c>TryGetPlayerForCurrentTurn(out var player).Username</c>. Used for clients so we don't have to resend the entire player object. This can be <c>null</c> if the game hasn't been started yet, as the turn order is not initialized until game start.
         /// </summary>
-        [JsonIgnore]
-        public Player PlayerForCurrentTurn => _turnOrderManager.PlayerForCurrentTurn;
-        /// <summary>
-        /// Wrapper around <c>PlayerForCurrentTurn.Username</c>, only to be used for clients so we don't have to resend the entire player object. Use the full form to avoid excess null checks. This can be <c>null</c> if the game hasn't been started yet, as the turn order is not initialized until game start.
-        /// </summary>
-        public string? CurrentTurn => this.GameStarted ? this.PlayerForCurrentTurn.Username : null; 
+        public string? CurrentTurn => this._turnOrderManager.TryGetPlayerForCurrentTurn(out var player) ? player.Username : null;
 
         /// <summary>
         /// Gets all chat messages for this lobby.
@@ -95,17 +87,15 @@ namespace liveorlive_server {
         private ItemDeck _itemDeck;
         private AmmoDeck _ammoDeck;
 
-        private IHubContext<LiveOrLiveHub, IHubServerResponse> _hubContext;
+        private Player CurrentPlayerForTurn => this._turnOrderManager.GetPlayerForCurrentTurn();
 
         /// <summary>
         /// Creates a new lobby with the specified settings and name.
         /// </summary>
-        /// <param name="hubContext">The hub context from the server, so the lobby can call hub methods from outside the function.</param>
         /// <param name="id">The ID for ths lobby. Should be generated uniquely by the server.</param>
         /// <param name="settings">The settings for this lobby. Default settings are used if <c>null</c>.</param>
         /// <param name="name">The name for this lobby. The lobby ID is used if <c>null</c>.</param>
-        public Lobby(IHubContext<LiveOrLiveHub, IHubServerResponse> hubContext, string id, Settings? settings = null, string? name = null) {
-            this._hubContext = hubContext;
+        public Lobby(string id, Settings? settings = null, string? name = null) {
             this.Id = id;
             this.Settings = settings ?? new Settings();
             this.Name = string.IsNullOrEmpty(name) ? this.Id : name;
@@ -115,7 +105,7 @@ namespace liveorlive_server {
         /// <summary>
         /// Resets the item deck, chamber, and turn order manager according to game settings and player list
         /// </summary>
-        [MemberNotNull(nameof(_turnOrderManager), nameof(_itemDeck), nameof(_ammoDeck))]
+        [MemberNotNull(nameof(_itemDeck), nameof(_ammoDeck), nameof(_turnOrderManager))]
         public void ResetManagers() {
             this._itemDeck = new ItemDeck(this.Settings);
             this._ammoDeck = new AmmoDeck(this.Settings);
@@ -156,27 +146,51 @@ namespace liveorlive_server {
             return (this._ammoDeck.BlankCount, this._ammoDeck.LiveCount);
         }
 
+        public string? EndTurn() {
+            if (this._turnOrderManager.TryGetPlayerForCurrentTurn(out var previousPlayer)) {
+                return previousPlayer.Username; 
+            }
+            return null;
+        }
+
         /// <summary>
         /// Moves the turn to the next player in-order. Handles passing through skipped players as well.
         /// </summary>
-        public void NewTurn() {
+        /// <param name="onTurnStart">Called with the username of a player when their turn begins. May be called multiple times depending on skips.</param>
+        /// <param name="onTurnEnd">Called with the username of a player when their turn ends, and a boolean to mark if the turn ended due to a skip. May be called multiple times depending on skips or the existence of a prior turn.</param>
+        public void NewTurn(Action<string> onTurnStart, Action<string, bool> onTurnEnd) {
+            // If there was a previous turn, mark them as ended
+            if (this._turnOrderManager.TryGetPlayerForCurrentTurn(out var previousPlayer)) {                
+                onTurnEnd(previousPlayer.Username, false);
+            }
+
+            this._turnOrderManager.Advance();
+
+            // Keep advancing until there's not a skip
+            var nextPlayer = this._turnOrderManager.GetPlayerForCurrentTurn();
+
             while (true) {
-                // End the old turn
-                this._hubContext.Clients.Group(this.Id).TurnEnded(this.PlayerForCurrentTurn.Username);
-
-                // Start the new
-                this._turnOrderManager.Advance();
-                this._hubContext.Clients.Group(this.Id).TurnStarted(this.PlayerForCurrentTurn.Username);
-
-                // Go again if skipped
-                if (this.PlayerForCurrentTurn.IsSkipped) {
-                    this.PlayerForCurrentTurn.IsSkipped = false;
-                    var gameLogMessage = this.AddGameLogMessage($"{this.PlayerForCurrentTurn.Username} was skipped.");
-                    this._hubContext.Clients.Group(this.Id).GameLogUpdate(gameLogMessage);
+                onTurnStart(nextPlayer.Username);
+                if (nextPlayer.IsSkipped) {
+                    nextPlayer.IsSkipped = false;
+                    onTurnEnd(nextPlayer.Username, true);
+                    nextPlayer = this._turnOrderManager.GetPlayerForCurrentTurn();
                 } else {
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Fires (pops) a round from the chamber. Wrapper around the ammo deck pop method.
+        /// </summary>
+        /// <returns>The bullet fired from the chamber</returns>
+        public BulletType FireGun() {
+            return this._ammoDeck.Pop();
+        }
+
+        public void PostActionTransition() {
+
         }
 
         /// <summary>

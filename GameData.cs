@@ -11,7 +11,7 @@ namespace liveorlive_server
         public bool gameStarted = false;
         public readonly string gameID = Guid.NewGuid().ToString();
 
-        public Player CurrentTurn { get { return this.turnOrderManager.PlayerForCurrentTurn; } }
+        public Player CurrentTurn { get { return this.turnOrderManager.GetPlayerForCurrentTurn(); } }
         public int damageForShot = 1;
 
         private readonly TurnOrderManager turnOrderManager;
@@ -32,9 +32,9 @@ namespace liveorlive_server
         public List<int> NewRound() {
             this.itemDeck.Refresh();
             // Give all players their items
-            foreach (Player player in this.players) {
-                // player.items = this.itemDeck.GetSetForPlayer();
-            }
+            // foreach (Player player in this.players) {
+            //      player.items = this.itemDeck.GetSetForPlayer();
+            // }
             this.ammoDeck.Refresh(); // Load the chamber
             return [this.ammoDeck.LiveCount, this.ammoDeck.BlankCount]; // Used in the outgoing packet
         }
@@ -64,7 +64,7 @@ namespace liveorlive_server
         //}
 
         public Player? GetCurrentPlayerForTurn() {
-            return this.GetPlayerByUsername(this.turnOrderManager.PlayerForCurrentTurn.Username);
+            return this.GetPlayerByUsername(this.turnOrderManager.GetPlayerForCurrentTurn().Username);
         }
 
         public List<Player> GetActivePlayers() {
