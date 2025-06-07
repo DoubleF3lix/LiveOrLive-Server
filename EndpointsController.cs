@@ -8,6 +8,11 @@ namespace liveorlive_server {
         private readonly Server _server = server;
         private readonly JsonSerializerOptions JSON_OPTIONS = new() { IncludeFields = true, WriteIndented = true };
 
+        [HttpGet("/")]
+        public RedirectResult Redirect() {
+            return Redirect("https://doublef3lix.github.io/LiveOrLive-Client");
+        }
+
         /// <summary>
         /// GET request to fetch all public lobbies as JSON.
         /// </summary>
