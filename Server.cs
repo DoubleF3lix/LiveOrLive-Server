@@ -81,10 +81,6 @@ namespace liveorlive_server {
             return id;
         }
 
-        public async Task Start(string url, int port) {
-            await this._app.RunAsync($"http://{url}:{port}");
-        }
-
         /*
         // All clients are held in here, and this function only exits when they disconnect
         private async Task ClientConnection(WebSocket webSocket, string ID) {
