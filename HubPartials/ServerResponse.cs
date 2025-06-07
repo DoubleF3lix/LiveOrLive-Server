@@ -1,4 +1,5 @@
 ﻿using liveorlive_server.Enums;
+using liveorlive_server.Models;
 using TypedSignalR.Client;
 
 namespace liveorlive_server.HubPartials

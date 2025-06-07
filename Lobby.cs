@@ -2,6 +2,7 @@
 using System.Text.Json.Serialization;
 using liveorlive_server.Deck;
 using liveorlive_server.Enums;
+using liveorlive_server.Models;
 using Tapper;
 
 namespace liveorlive_server {
@@ -221,7 +222,7 @@ namespace liveorlive_server {
         /// </summary>
         /// <param name="username">The username to search by.</param>
         /// <param name="player">The Player instance for the matched player, or <c>null</c> if not found.</param>
-        /// <returns></returns>
+        /// <returns>A boolean matching if the player could be found.</returns>
         public bool TryGetPlayerByUsername(string username, [NotNullWhen(true)] out Player? player) {
             player = this.Players.FirstOrDefault(player => player.Username == username);
             return player != null;

@@ -1,4 +1,5 @@
-﻿using Tapper;
+﻿using liveorlive_server.Models;
+using Tapper;
 
 namespace liveorlive_server {
     [TranspilationSource]

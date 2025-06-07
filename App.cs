@@ -26,8 +26,6 @@ namespace liveorlive_server {
             app.MapControllers();
 
             app.MapHub<LiveOrLiveHub>("");
-
-            app.Run("http://0.0.0.0:8080");
         }
 
         public async Task Start(string url, int port) {
