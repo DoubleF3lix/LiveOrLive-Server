@@ -1,5 +1,6 @@
 ﻿using liveorlive_server.Enums;
 using liveorlive_server.Extensions;
+using liveorlive_server.Models;
 using Microsoft.AspNetCore.SignalR;
 
 namespace liveorlive_server.HubPartials {
