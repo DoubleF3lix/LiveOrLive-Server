@@ -89,7 +89,9 @@ namespace liveorlive_server.HubPartials {
 
                 await Clients.Group(lobby.Id).PlayerLeft(player.Username);
                 // Check if the game is over when someone leaves
-                await EndGameConditional(lobby);
+                if (lobby.GameStarted) {
+                    await EndGameConditional(lobby);
+                }
             }
             this._connectionContexts.Remove(Context.ConnectionId, out _);
             await base.OnDisconnectedAsync(exception);

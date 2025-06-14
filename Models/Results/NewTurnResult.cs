@@ -1,11 +1,11 @@
 ﻿namespace liveorlive_server.Models.Results {
-    public abstract class TurnResult {
+    public abstract class NewTurnResult {
         public required string PlayerUsername { get; set; }
     }
 
-    public class StartTurnResult : TurnResult { }
+    public class StartTurnResult : NewTurnResult { }
 
-    public class EndTurnResult : TurnResult {
+    public class EndTurnResult : NewTurnResult {
         public bool EndDueToSkip { get; set; }
     }
 }

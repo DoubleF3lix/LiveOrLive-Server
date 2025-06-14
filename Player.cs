@@ -29,13 +29,19 @@ namespace liveorlive_server {
             return this.Username == player.Username;
         }
 
-        public void ResetDefaults() {
+        /// <summary>
+        /// Resets this player to defaults (clears items, resets lives, etc.).
+        /// </summary>
+        /// <returns>Returns <c>this</c> to simplify using <c>.Select()</c> in LINQ.</returns>
+        public Player ResetDefaults() {
             InGame = true;
             IsSpectator = false;
             Lives = config.DefaultLives;
             Items = new(config.MaxItems);
             IsSkipped = false;
             IsRicochet = false;
+
+            return this;
         }
 
         // Stop VS warnings since we override Equals()
