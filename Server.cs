@@ -88,10 +88,9 @@ namespace liveorlive_server {
         /// </summary>
         /// <returns>The randomly generated ID.</returns>
         public string GenerateId() {
-            var rand = new Random();
             string? id;
             do {
-                /* id = Guid.NewGuid()
+                id = Guid.NewGuid()
                     .ToString("N")
                     .ToUpper()
                     .Replace("0", "")
@@ -100,8 +99,7 @@ namespace liveorlive_server {
                     .Replace("1", "")
                     .Replace("5", "")
                     .Replace("S", "")
-                    .Substring(0, 4); */
-                id = rand.Next(1000, 10000).ToString();
+                    [..4]; 
             } while (id != "" && TryGetLobbyById(id, out _));
             return id;
         }

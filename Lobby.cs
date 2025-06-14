@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using liveorlive_server.Deck;
 using liveorlive_server.Enums;
 using liveorlive_server.Models;
+using liveorlive_server.Models.Results;
 using Tapper;
 
 namespace liveorlive_server {
@@ -51,6 +52,8 @@ namespace liveorlive_server {
         /// Wrapper around <c>TryGetPlayerForCurrentTurn(out var player).Username</c>. Used for clients so we don't have to resend the entire player object. This can be <c>null</c> if the game hasn't been started yet, as the turn order is not initialized until game start.
         /// </summary>
         public string? CurrentTurn => this._turnOrderManager.TryGetPlayerForCurrentTurn(out var player) ? player.Username : null;
+
+        public int AmmoLeftInChamber => _ammoDeck.Count;
 
         /// <summary>
         /// Gets all chat messages for this lobby.
@@ -133,49 +136,61 @@ namespace liveorlive_server {
             this._itemDeck.Initialize(this.Players.Count);
         }
 
+        public EndGameResult EndGame() {
+            // There's almost certainly at least one player left when this runs (used to just wipe if there was nobody left, but that situation requires 2 people to DC at once which I don't care enough to account for)
+            var winner = Players.FirstOrDefault(player => player.Lives >= 1)?.Username ?? "nobody";
+
+            GameStarted = false;
+            var cleanedPlayers = new List<Player>();
+            foreach (var player in Players) {
+                if (player.InGame) {
+                    player.ResetDefaults();
+                    cleanedPlayers.Add(player);
+                }
+            }
+            Players = cleanedPlayers;
+
+            return new EndGameResult { Winner = winner };
+        }
+
         /// <summary>
         /// Starts a new round, reloading the chamber and refreshing the item deck. <c>NewTurn</c> should be called immediately after.
         /// </summary>
         /// <returns>A two-tuple with the blank and live counts for the chamber reload, respectively</returns>
-        public (int, int) NewRound() {
+        public NewRoundResult NewRound() {
             this._itemDeck.Refresh();
             foreach (Player player in this.Players.Where(p => !p.IsSpectator)) {
                 this._itemDeck.DealItemsToPlayer(player);
             }
 
             this._ammoDeck.Refresh();
-            return (this._ammoDeck.BlankCount, this._ammoDeck.LiveCount);
-        }
-
-        public string? EndTurn() {
-            if (this._turnOrderManager.TryGetPlayerForCurrentTurn(out var previousPlayer)) {
-                return previousPlayer.Username; 
-            }
-            return null;
+            return new NewRoundResult { 
+                BlankRounds = _ammoDeck.BlankCount, 
+                LiveRounds = _ammoDeck.LiveCount
+            };
         }
 
         /// <summary>
         /// Moves the turn to the next player in-order. Handles passing through skipped players as well.
         /// </summary>
-        /// <param name="onTurnStart">Called with the username of a player when their turn begins. May be called multiple times depending on skips.</param>
-        /// <param name="onTurnEnd">Called with the username of a player when their turn ends, and a boolean to mark if the turn ended due to a skip. May be called multiple times depending on skips or the existence of a prior turn.</param>
-        public void NewTurn(Action<string> onTurnStart, Action<string, bool> onTurnEnd) {
+        /// <returns>An enumerable containing how the turn order progressed automatically (such as old turns ending, skips, etc.).</returns>
+        public IEnumerable<TurnResult> NewTurn() {
             // If there was a previous turn, mark them as ended
-            if (this._turnOrderManager.TryGetPlayerForCurrentTurn(out var previousPlayer)) {                
-                onTurnEnd(previousPlayer.Username, false);
+            if (_turnOrderManager.TryGetPlayerForCurrentTurn(out var previousPlayer)) {     
+                yield return new EndTurnResult { PlayerUsername = previousPlayer.Username, EndDueToSkip = false };
             }
 
-            this._turnOrderManager.Advance();
+            _turnOrderManager.Advance();
 
             // Keep advancing until there's not a skip
-            var nextPlayer = this._turnOrderManager.GetPlayerForCurrentTurn();
-
             while (true) {
-                onTurnStart(nextPlayer.Username);
+                var nextPlayer = _turnOrderManager.GetPlayerForCurrentTurn();
+                yield return new StartTurnResult { PlayerUsername = nextPlayer.Username };
+
                 if (nextPlayer.IsSkipped) {
                     nextPlayer.IsSkipped = false;
-                    onTurnEnd(nextPlayer.Username, true);
-                    nextPlayer = this._turnOrderManager.GetPlayerForCurrentTurn();
+                    yield return new EndTurnResult { PlayerUsername = nextPlayer.Username, EndDueToSkip = true };
+                    _turnOrderManager.Advance();
                 } else {
                     break;
                 }
@@ -183,11 +198,20 @@ namespace liveorlive_server {
         }
 
         /// <summary>
-        /// Fires (pops) a round from the chamber. Wrapper around the ammo deck pop method.
+        /// Shoots a player with a round from the chamber.
         /// </summary>
-        /// <returns>The bullet fired from the chamber</returns>
-        public BulletType FireGun() {
-            return this._ammoDeck.Pop();
+        /// <param name="shooter">The player who fired the shot</param>
+        /// <param name="target">The player who was shot at. Can be the same as <c>shooter</c>.</param>
+        /// <returns>The data about the shot, including what type, the damage, and whether or not they shot themselves. Doesn't include <c>shooter</c> or <c>target</c> as these are assumed to be owned by the caller.</returns>
+        public ShootPlayerResult ShootPlayer(Player shooter, Player target) {
+            var bulletType = this._ammoDeck.Pop();
+            target.Lives -= (int)bulletType;
+
+            return new ShootPlayerResult {
+                BulletFired = bulletType,
+                Damage = (int)bulletType,
+                ShotSelf = shooter == target
+            };
         }
 
         public void PostActionTransition() {

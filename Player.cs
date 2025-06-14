@@ -28,5 +28,19 @@ namespace liveorlive_server {
         public bool Equals(Player player) {
             return this.Username == player.Username;
         }
+
+        public void ResetDefaults() {
+            InGame = true;
+            IsSpectator = false;
+            Lives = config.DefaultLives;
+            Items = new(config.MaxItems);
+            IsSkipped = false;
+            IsRicochet = false;
+        }
+
+        // Stop VS warnings since we override Equals()
+        public override int GetHashCode() {
+            throw new NotImplementedException();
+        }
     }
 }
