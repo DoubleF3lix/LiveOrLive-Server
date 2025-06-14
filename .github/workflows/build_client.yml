@@ -28,7 +28,7 @@ jobs:
 
       - run: dotnet tool install --global TypedSignalR.Client.TypeScript.Generator
 
-      - run: dotnet tsrts --project ./xxx/yyyy/zzz.csproj --output ${{ github.workspace }}/generated
+      - run: dotnet tsrts --project ./liveorlive-server.csproj --output ${{ github.workspace }}/generated
 
       - uses: actions/upload-artifact@v4
         with:
