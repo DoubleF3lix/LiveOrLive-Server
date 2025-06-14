@@ -84,10 +84,12 @@ namespace liveorlive_server.HubPartials {
                 if (lobby.Host == player.Username) {
                     lobby.Host = lobby.Players.FirstOrDefault(p => p.InGame)?.Username;
                     // player.username is previous host
-                    await Clients.Group(Context.GetLobbyId()).HostChanged(player.Username, lobby.Host, "Host disconnected");
+                    await Clients.Group(lobby.Id).HostChanged(player.Username, lobby.Host, "Host disconnected");
                 }
 
-                await Clients.Group(Context.GetLobbyId()).PlayerLeft(player.Username);
+                await Clients.Group(lobby.Id).PlayerLeft(player.Username);
+                // Check if the game is over when someone leaves
+                await EndGameConditional(lobby);
             }
             this._connectionContexts.Remove(Context.ConnectionId, out _);
             await base.OnDisconnectedAsync(exception);

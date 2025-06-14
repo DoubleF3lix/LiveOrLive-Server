@@ -40,10 +40,8 @@ namespace liveorlive_server.HubPartials {
         }
 
         private async Task OnActionEnd(Lobby lobby, bool isTurnEndingMove) {
-            // Check for game end (if there's one player left standing)
-            // Make sure the game is still going in case this triggers twice
-            if (lobby.Players.Count(player => !player.IsSpectator && player.Lives > 0) <= 1) {
-                await EndGame(lobby);
+            // If the game is over, we're done
+            if (await EndGameConditional(lobby)) {
                 return;
             }
 
@@ -55,6 +53,14 @@ namespace liveorlive_server.HubPartials {
             if (lobby.AmmoLeftInChamber <= 0) {
                 await NewRound(lobby);
             }
+        }
+
+        private async Task<bool> EndGameConditional(Lobby lobby) {
+            if (lobby.Players.Count(player => player.InGame && !player.IsSpectator && player.Lives > 0) <= 1) {
+                await EndGame(lobby);
+                return true;
+            }
+            return false;
         }
 
         private async Task AddGameLogMessage(Lobby lobby, string message) {
