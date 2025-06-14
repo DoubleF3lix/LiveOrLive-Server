@@ -56,7 +56,7 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby to start a new round on.</param>
         private async Task NewRound(Lobby lobby) {
             var result = lobby.NewRound();
-            await Clients.Group(lobby.Id).NewRoundStarted(result.BlankRounds, result.LiveRounds);
+            await Clients.Group(lobby.Id).NewRoundStarted(result);
             await AddGameLogMessage(lobby, $"A new round has started with {result.LiveRounds} live rounds and {result.BlankRounds} blanks.");
         }
 

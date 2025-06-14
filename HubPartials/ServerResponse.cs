@@ -1,5 +1,6 @@
 ﻿using liveorlive_server.Enums;
 using liveorlive_server.Models;
+using liveorlive_server.Models.Results;
 using TypedSignalR.Client;
 
 namespace liveorlive_server.HubPartials
@@ -37,7 +38,7 @@ namespace liveorlive_server.HubPartials
     public interface IBaseGameResponse {
         Task GameStarted();
         Task GameEnded(string? winner);
-        Task NewRoundStarted(int blankRoundCount, int liveRoundCount);
+        Task NewRoundStarted(NewRoundResult result);
         Task TurnStarted(string username);
         Task TurnEnded(string username);
         Task GetLobbyDataResponse(Lobby lobbyData);

@@ -55,11 +55,13 @@ namespace liveorlive_server.Deck {
         /// Deal items to a player according to <c>numItemsToDeal</c> (set in <c>Initialize</c> according to lobby settings).
         /// </summary>
         /// <param name="player">The player to deal the items to.</param>
-        public void DealItemsToPlayer(Player player) {
+        /// <returns>The items that were dealt to the player.</returns>
+        public List<Item> DealItemsToPlayer(Player player) {
             var itemsToDeal = Math.Min(settings.MaxItems - player.Items.Count, this.numItemsToDeal);
             var output = new List<Item>(itemsToDeal);
             output.AddRange(Enumerable.Range(0, itemsToDeal).Select(_ => Pop()));
             player.Items.AddRange(output);
+            return output;
         }
     }
 }

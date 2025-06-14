@@ -163,15 +163,19 @@ namespace liveorlive_server {
         /// </summary>
         /// <returns>See <see cref="NewRoundResult"/></returns>
         public NewRoundResult NewRound() {
+            var dealtItems = new Dictionary<string, List<Item>>();
+
             _itemDeck.Refresh();
             foreach (Player player in Players.Where(p => !p.IsSpectator)) {
-                _itemDeck.DealItemsToPlayer(player);
+                var items = _itemDeck.DealItemsToPlayer(player);
+                dealtItems.Add(player.Username, items);
             }
 
             _ammoDeck.Refresh();
             return new NewRoundResult { 
                 BlankRounds = _ammoDeck.BlankCount, 
-                LiveRounds = _ammoDeck.LiveCount
+                LiveRounds = _ammoDeck.LiveCount,
+                DealtItems = dealtItems
             };
         }
 
