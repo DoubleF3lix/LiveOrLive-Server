@@ -1,0 +1,36 @@
+name: typedsignalr-typescript-code-generator
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: "9.0.x"
+  DOTNET_NOLOGO: true
+
+jobs:
+  typedsignalr-typescript-code-generator:
+    name: typedsignalr-typescript-code-generator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build All
+        run: dotnet build --no-restore
+
+      - run: dotnet tool install --global TypedSignalR.Client.TypeScript.Generator
+
+      - run: dotnet tsrts --project ./xxx/yyyy/zzz.csproj --output ${{ github.workspace }}/generated
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: generated
+          path: ${{ github.workspace }}/generated
