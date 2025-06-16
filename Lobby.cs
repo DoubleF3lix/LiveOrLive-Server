@@ -127,11 +127,14 @@ namespace liveorlive_server {
         /// <summary>
         /// Starts the game. <c>NewRound</c> should be called immediately after. This function only initializes the game state.
         /// </summary>
-        public void StartGame() {
+        /// <returns>The turn order for the started game.</returns>
+        public List<string> StartGame() {
             GameStarted = true;
             ResetManagers();
             _gameLog.Clear();
             _itemDeck.Initialize(Players.Count);
+
+            return TurnOrder;
         }
 
         /// <summary>

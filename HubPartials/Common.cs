@@ -10,8 +10,8 @@ namespace liveorlive_server.HubPartials {
         /// </summary>
         /// <param name="lobby">The lobby to start the game of.</param>
         private async Task StartGame(Lobby lobby) {
-            lobby.StartGame();
-            await Clients.Group(lobby.Id).GameStarted();
+            var turnOrder = lobby.StartGame();
+            await Clients.Group(lobby.Id).GameStarted(turnOrder);
             await AddGameLogMessage(lobby, $"The game has started with {lobby.Players.Count(p => !p.IsSpectator)} players.");
         }
 
