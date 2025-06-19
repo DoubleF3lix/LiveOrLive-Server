@@ -134,7 +134,7 @@ namespace liveorlive_server {
             _gameLog.Clear();
             _itemDeck.Initialize(Players.Count);
 
-            return TurnOrder;
+            return _turnOrderManager.TurnOrder;
         }
 
         /// <summary>

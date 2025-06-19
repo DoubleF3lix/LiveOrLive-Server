@@ -137,7 +137,7 @@ namespace liveorlive_server.Models {
             if (this.EnableChamberCheckItem) yield return Item.ChamberCheck;
             if (this.EnableDoubleDamageItem) yield return Item.DoubleDamage;
             if (this.EnableSkipItem) yield return Item.Skip;
-            if (this.EnableRicochetItem) yield return Item.Richochet;
+            if (this.EnableRicochetItem) yield return Item.Ricochet;
         }
     }
 }

@@ -12,6 +12,6 @@ namespace liveorlive_server.Enums {
         ChamberCheck,
         DoubleDamage,
         Skip,
-        Richochet
+        Ricochet
     }
 }
