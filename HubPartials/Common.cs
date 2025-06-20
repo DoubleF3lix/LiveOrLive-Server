@@ -111,22 +111,25 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby the player belongs to.</param>
         /// <param name="user">The player using the item.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseReverseTurnOrderItemActual(Lobby lobby, Player user, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseReverseTurnOrderItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableReverseTurnOrderItem) {
                 await Clients.Caller.ActionFailed("Reverse Turn Order is not enabled!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.ReverseTurnOrder)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Reverse Turn Order item!" : $"{itemSource.Username} doesn't have a Reverse Turn Order item!");
-                return;
+                return false;
             }
 
             lobby.ReverseTurnOrder();
             await Clients.Group(lobby.Id).ReverseTurnOrderItemUsed();
-            await AddGameLogMessage(lobby, $"{user.Username} reversed the turn order.");
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} reversed the turn order.");
+
+            return true;
         }
 
         /// <summary>
@@ -135,22 +138,25 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby the player belongs to.</param>
         /// <param name="user">The player using the item.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseRackChamberItemActual(Lobby lobby, Player user, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseRackChamberItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableRackChamberItem) {
                 await Clients.Caller.ActionFailed("Rack Chamber is not enabled!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.RackChamber)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Rack Chamber item!" : $"{itemSource.Username} doesn't have a Rack Chamber item!");
-                return;
+                return false;
             }
 
             var result = lobby.RackChamber();
             await Clients.Group(lobby.Id).RackChamberItemUsed(result.BulletType);
-            await AddGameLogMessage(lobby, $"{user.Username} racked the chamber and ejected a {(result.BulletType == BulletType.Live ? "live" : "blank")} round.");
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} racked the chamber, ejecting a {(result.BulletType == BulletType.Live ? "live" : "blank")} round.");
+
+            return true;
         }
 
         /// <summary>
@@ -160,27 +166,30 @@ namespace liveorlive_server.HubPartials {
         /// <param name="user">The player using the item.</param>
         /// <param name="target">The username of the player getting the extra life.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseExtraLifeItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseExtraLifeItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
             if (!lobby.Settings.EnableExtraLifeItem) {
                 await Clients.Caller.ActionFailed("Extra Life is not enabled!");
-                return;
+                return false;
             }
 
             if (!lobby.TryGetPlayerByUsername(target, out var targetPlayer)) {
                 await Clients.Caller.ActionFailed($"{target} isn't a valid player!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.ExtraLife)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have an Extra Life item!" : $"{itemSource.Username} doesn't have an Extra Life item!");
-                return;
+                return false;
             }
 
             lobby.GiveExtraLife(targetPlayer);
             await Clients.Group(lobby.Id).ExtraLifeItemUsed(target);
-            await AddGameLogMessage(lobby, $"{user.Username} used an extra life item and gave {(user == targetPlayer ? "themselves" : targetPlayer.Username)} an extra life.");
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? " stole an item and" : "")} gave {(user == targetPlayer ? "themselves" : targetPlayer.Username)} an extra life.");
+
+            return true;
         }
 
         /// <summary>
@@ -191,81 +200,72 @@ namespace liveorlive_server.HubPartials {
         /// <param name="stealTarget">The username of the player we're stealing an item from.</param>
         /// <param name="itemToSteal">The item we're stealing from <c>target</c>.</param>
         /// <param name="stolenItemTarget">The username of the player we're using the stolen item on, if applicable.</param>
-        private async Task UsePickpocketItemActual(Lobby lobby, Player user, string stealTarget, Item itemToSteal, string? stolenItemTarget) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UsePickpocketItemActual(Lobby lobby, Player user, string stealTarget, Item itemToSteal, string? stolenItemTarget) {
             if (!lobby.Settings.EnablePickpocketItem) {
                 await Clients.Caller.ActionFailed("Pickpocket is not enabled!");
-                return;
+                return false;
             }
 
             if (!lobby.TryGetPlayerByUsername(stealTarget, out var stealTargetPlayer)) {
                 await Clients.Caller.ActionFailed($"{stealTarget} isn't a valid player!");
-                return;
+                return false;
             }
 
-            if (!user.Items.Remove(Item.Pickpocket)) {
+            // Don't remove yet, in case the child item was a failure
+            if (!user.Items.Contains(Item.Pickpocket)) {
                 await Clients.Caller.ActionFailed("You don't have a Pickpocket item!");
-                return;
+                return false;
             }
 
             if (itemToSteal == Item.Pickpocket) {
                 await Clients.Caller.ActionFailed("You can't steal a Pickpocket item!");
-                return;
+                return false;
             }
 
-            if (!stealTargetPlayer.Items.Remove(itemToSteal)) {
+            // Don't remove, in case usage fails
+            if (!stealTargetPlayer.Items.Contains(itemToSteal)) {
                 await Clients.Caller.ActionFailed($"{stealTargetPlayer.Username} doesn't have a {itemToSteal} item!");
-                return;
+                return false;
             }
 
             if (itemToSteal == Item.ExtraLife || itemToSteal == Item.Skip || itemToSteal == Item.Ricochet) {
                 if (stolenItemTarget == null) {
                     await Clients.Caller.ActionFailed($"{itemToSteal} requires an item target!");
-                    return;
+                    return false;
                 }
 
-                if (!lobby.TryGetPlayerByUsername(stolenItemTarget, out var _)) {
+                if (!lobby.TryGetPlayerByUsername(stolenItemTarget, out _)) {
                     await Clients.Caller.ActionFailed($"{stolenItemTarget} isn't a valid player!");
-                    return;
+                    return false;
                 }
             }
-
-            // Tell everyone first because it should follow chronology (X stole an item -> X used item)
-            await Clients.Group(lobby.Id).PickpocketItemUsed(stealTarget, itemToSteal, stolenItemTarget);
-            // Grammar is important kids (7:54 PM)
-            // Grammar is important, kids* (8:14 PM)
-            await AddGameLogMessage(lobby, $"{user.Username} stole a{(itemToSteal == Item.ExtraLife || itemToSteal == Item.Invert ? "n" : "")} {itemToSteal.ToString().ToLower()} item from {stealTargetPlayer.Username}.");
 
             // TODO need to check that item usage worked correctly... perhaps make each one return true if success
             // Also need to not take pickpocket item if the sub-item use failed
-            switch (itemToSteal) {
-                case Item.ReverseTurnOrder:
-                    await UseReverseTurnOrderItemActual(lobby, user, stealTargetPlayer);
-                    break;
-                case Item.RackChamber:
-                    await UseRackChamberItemActual(lobby, user, stealTargetPlayer);
-                    break;
-                case Item.ExtraLife when stolenItemTarget != null:
-                    await UseExtraLifeItemActual(lobby, user, stolenItemTarget, stealTargetPlayer);
-                    break;
-                case Item.LifeGamble:
-                    await UseLifeGambleItemActual(lobby, user, stealTargetPlayer);
-                    break;
-                case Item.Invert:
-                    await UseInvertItemActual(lobby, user, stealTargetPlayer);
-                    break;
-                case Item.ChamberCheck:
-                    await UseChamberCheckItemActual(lobby, user, stealTargetPlayer);
-                    break;
-                case Item.DoubleDamage:
-                    await UseDoubleDamageItemActual(lobby, user, stealTargetPlayer);
-                    break;
-                case Item.Skip when stolenItemTarget != null:
-                    await UseSkipItemActual(lobby, user, stolenItemTarget, stealTargetPlayer);
-                    break;
-                case Item.Ricochet when stolenItemTarget != null:
-                    await UseRicochetItemActual(lobby, user, stolenItemTarget, stealTargetPlayer);
-                    break;
+            bool stolenItemUseSuccess = itemToSteal switch {
+                Item.ReverseTurnOrder => await UseReverseTurnOrderItemActual(lobby, user, stealTargetPlayer),
+                Item.RackChamber => await UseRackChamberItemActual(lobby, user, stealTargetPlayer),
+                Item.ExtraLife when stolenItemTarget != null => await UseExtraLifeItemActual(lobby, user, stolenItemTarget, stealTargetPlayer),
+                Item.Pickpocket => throw new NotImplementedException(),
+                Item.LifeGamble => await UseLifeGambleItemActual(lobby, user, stealTargetPlayer),
+                Item.Invert => await UseInvertItemActual(lobby, user, stealTargetPlayer),
+                Item.ChamberCheck => await UseChamberCheckItemActual(lobby, user, stealTargetPlayer),
+                Item.DoubleDamage => await UseDoubleDamageItemActual(lobby, user, stealTargetPlayer),
+                Item.Skip when stolenItemTarget != null => await UseSkipItemActual(lobby, user, stolenItemTarget, stealTargetPlayer),
+                Item.Ricochet when stolenItemTarget != null => await UseRicochetItemActual(lobby, user, stolenItemTarget, stealTargetPlayer),
+                _ => throw new NotImplementedException()
+            };
+
+            // Remove only on success
+            // The above calls should handle printing any success/error messages, so we're done
+            if (stolenItemUseSuccess) {
+                user.Items.Remove(Item.Pickpocket);
+                stealTargetPlayer.Items.Remove(itemToSteal);
+                await Clients.Group(lobby.Id).PickpocketItemUsed(stealTarget, itemToSteal, stolenItemTarget);
             }
+
+            return stolenItemUseSuccess;
         }
 
         /// <summary>
@@ -274,23 +274,26 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby the player belongs to.</param>
         /// <param name="user">The player using the item.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseLifeGambleItemActual(Lobby lobby, Player user, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseLifeGambleItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableLifeGambleItem) {
                 await Clients.Caller.ActionFailed("Life Gamble is not enabled!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.LifeGamble)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Life Gamble item!" : $"{itemSource.Username} doesn't have a Life Gamble item!");
-                return;
+                return false;
             }
 
             var result = lobby.LifeGamble(user);
             await Clients.Group(lobby.Id).LifeGambleItemUsed(result.LifeChange);
             // Grammar is *still* important, kids
-            await AddGameLogMessage(lobby, $"{user.Username} used a life gamble item and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(result.LifeChange == 1 ? "life" : "lives")}.");
+            await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $"from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(result.LifeChange == 1 ? "life" : "lives")}.");
+
+            return true;
         }
 
         /// <summary>
@@ -299,22 +302,25 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby the player belongs to.</param>
         /// <param name="user">The player using the item.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseInvertItemActual(Lobby lobby, Player user, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseInvertItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableInvertItem) {
                 await Clients.Caller.ActionFailed("Invert is not enabled!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.Invert)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have an Invert item!" : $"{itemSource.Username} doesn't have an Invert item!");
-                return;
+                return false;
             }
 
             lobby.InvertChamber();
             await Clients.Group(lobby.Id).InvertItemUsed();
-            await AddGameLogMessage(lobby, $"{user.Username} inverted the chamber round.");
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} inverted the chamber round.");
+
+            return true;
         }
 
         /// <summary>
@@ -323,22 +329,25 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby the player belongs to.</param>
         /// <param name="user">The player using the item.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseChamberCheckItemActual(Lobby lobby, Player user, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseChamberCheckItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableChamberCheckItem) {
                 await Clients.Caller.ActionFailed("Chamber Check is not enabled!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.ChamberCheck)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Chamber Check item!" : $"{itemSource.Username} doesn't have a Chamber Check item!");
-                return;
+                return false;
             }
 
             var result = lobby.PeekChamber();
             await Clients.Group(lobby.Id).ChamberCheckItemUsed(result.ChamberRoundType);
-            await AddGameLogMessage(lobby, $"{user.Username} peeked the chamber. It's a {result.ChamberRoundType.ToString().ToLower()} round!");
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} peeked the chamber. It's a {result.ChamberRoundType.ToString().ToLower()} round!");
+
+            return true;
         }
 
         /// <summary>
@@ -347,27 +356,30 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby the player belongs to.</param>
         /// <param name="user">The player using the item.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseDoubleDamageItemActual(Lobby lobby, Player user, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseDoubleDamageItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableDoubleDamageItem) {
                 await Clients.Caller.ActionFailed("Double Damage is not enabled!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.ChamberCheck)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Double Damage item!" : $"{itemSource.Username} doesn't have a Double Damage item!");
-                return;
+                return false;
             }
 
             if (lobby.DoubleDamageEnabled) {
                 await Clients.Caller.ActionFailed("Double damage is already activated!");
-                return;
+                return false;
             }
 
             lobby.EnableDoubleDamage();
             await Clients.Group(lobby.Id).DoubleDamageItemUsed();
-            await AddGameLogMessage(lobby, $"{user.Username} activated double damage for the next shot.");
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} activated double damage for the next shot.");
+
+            return true;
         }
 
         /// <summary>
@@ -377,32 +389,35 @@ namespace liveorlive_server.HubPartials {
         /// <param name="user">The player using the item.</param>
         /// <param name="target">The username of the player getting the extra life.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseSkipItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseSkipItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
             if (!lobby.Settings.EnableSkipItem) {
                 await Clients.Caller.ActionFailed("Skip is not enabled!");
-                return;
+                return false;
             }
 
             if (!lobby.TryGetPlayerByUsername(target, out var targetPlayer)) {
                 await Clients.Caller.ActionFailed($"{target} isn't a valid player!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.Skip)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Skip item!" : $"{itemSource.Username} doesn't have a Skip item!");
-                return;
+                return false;
             }
 
             if (targetPlayer.IsSkipped) {
                 await Clients.Caller.ActionFailed($"{targetPlayer.Username} is already skipped!");
-                return;
+                return false;
             }
 
             lobby.SkipPlayer(targetPlayer);
             await Clients.Group(lobby.Id).SkipItemUsed(target);
-            await AddGameLogMessage(lobby, $"{user.Username} skipped {(user == targetPlayer ? "themselves" : targetPlayer.Username)}.");
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} skipped {(user == targetPlayer ? "themselves" : targetPlayer.Username)}.");
+
+            return true;
         }
 
         /// <summary>
@@ -412,33 +427,34 @@ namespace liveorlive_server.HubPartials {
         /// <param name="user">The player using the item.</param>
         /// <param name="target">The username of the player getting the extra life.</param>
         /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
-        private async Task UseRicochetItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UseRicochetItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
             if (!lobby.Settings.EnableRicochetItem) {
                 await Clients.Caller.ActionFailed("Ricochet is not enabled!");
-                return;
+                return false;
             }
 
             if (!lobby.TryGetPlayerByUsername(target, out var targetPlayer)) {
                 await Clients.Caller.ActionFailed($"{target} isn't a valid player!");
-                return;
+                return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Remove(Item.Ricochet)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Ricochet item!" : $"{itemSource.Username} doesn't have a Ricochet item!");
-                return;
+                return false;
             }
 
             // TODO don't stop them from using it if ricochets are anonymous
             if (targetPlayer.IsRicochet) {
                 await Clients.Caller.ActionFailed($"{targetPlayer.Username} is already protected with ricochet!");
-                return;
+                return false;
             }
 
             lobby.SkipPlayer(targetPlayer);
             await Clients.Group(lobby.Id).RicochetItemUsed(target);
-            await AddGameLogMessage(lobby, $"{user.Username} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
         }
     }
 }
