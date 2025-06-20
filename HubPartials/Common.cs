@@ -67,6 +67,9 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby to perform the end of action checks on.</param>
         /// <param name="isTurnEndingMove">Whether or not the action should end the players turn.</param>
         private async Task OnActionEnd(Lobby lobby, bool isTurnEndingMove) {
+            // TODO elimination checking (take in acted on player)
+            // Also check for sudden death enabling
+
             // If the game is over, we're done
             if (await EndGameConditional(lobby)) {
                 return;
@@ -241,8 +244,6 @@ namespace liveorlive_server.HubPartials {
                 }
             }
 
-            // TODO need to check that item usage worked correctly... perhaps make each one return true if success
-            // Also need to not take pickpocket item if the sub-item use failed
             bool stolenItemUseSuccess = itemToSteal switch {
                 Item.ReverseTurnOrder => await UseReverseTurnOrderItemActual(lobby, user, stealTargetPlayer),
                 Item.RackChamber => await UseRackChamberItemActual(lobby, user, stealTargetPlayer),
@@ -257,7 +258,7 @@ namespace liveorlive_server.HubPartials {
                 _ => throw new NotImplementedException()
             };
 
-            // Remove only on success
+            // Remove items only on success
             // The above calls should handle printing any success/error messages, so we're done
             if (stolenItemUseSuccess) {
                 user.Items.Remove(Item.Pickpocket);
@@ -292,6 +293,9 @@ namespace liveorlive_server.HubPartials {
             await Clients.Group(lobby.Id).LifeGambleItemUsed(result.LifeChange);
             // Grammar is *still* important, kids
             await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $"from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(result.LifeChange == 1 ? "life" : "lives")}.");
+
+            // Need to check if we eliminated ourselves (whoops!)
+            await OnActionEnd(lobby, false);
 
             return true;
         }
@@ -455,6 +459,8 @@ namespace liveorlive_server.HubPartials {
             lobby.SkipPlayer(targetPlayer);
             await Clients.Group(lobby.Id).RicochetItemUsed(target);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
+
+            return true;
         }
     }
 }
