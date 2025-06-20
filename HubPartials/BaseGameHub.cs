@@ -35,27 +35,26 @@ namespace liveorlive_server.HubPartials {
                 return;
             }
 
-            if (lobby.TryGetPlayerByUsername(target, out var targetPlayer)) {
-                var result = lobby.ShootPlayer(shooterPlayer, targetPlayer);
-
-                // Be verbose about who shot who (even if it's themselves)
-                await Clients.Group(lobby.Id).PlayerShotAt(target, result.BulletFired, result.Damage);
-
-                string message;
-                if (result.BulletFired == BulletType.Blank) {
-                    message = $"{shooterPlayer.Username} shot {(result.ShotSelf ? "themselves" : target)} with a blank round.";
-                } else {
-                    message = $"{shooterPlayer.Username} shot {target} with a live round for {result.Damage} damage.";
-                }
-
-                await Clients.Group(lobby.Id).GameLogUpdate(new GameLogMessage(message));
-                // It's a turn ending action if it was not a blank round fired at themselves
-                await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
-
-            } else {
+            if (!lobby.TryGetPlayerByUsername(target, out var targetPlayer)) {
                 await Clients.Caller.ActionFailed($"{target} isn't a valid player!");
                 return;
             }
+
+            var result = lobby.ShootPlayer(shooterPlayer, targetPlayer);
+
+            // Be verbose about who shot who (even if it's themselves)
+            await Clients.Group(lobby.Id).PlayerShotAt(target, result.BulletFired, result.Damage);
+
+            string message;
+            if (result.BulletFired == BulletType.Blank) {
+                message = $"{shooterPlayer.Username} shot {(result.ShotSelf ? "themselves" : target)} with a blank round.";
+            } else {
+                message = $"{shooterPlayer.Username} shot {target} with a live round for {result.Damage} damage.";
+            }
+
+            await AddGameLogMessage(lobby, message);
+            // It's a turn ending action if it was not a blank round fired at themselves
+            await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
         }
     }
 }

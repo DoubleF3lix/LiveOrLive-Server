@@ -42,8 +42,19 @@ namespace liveorlive_server.Deck {
         /// Used by the <c>ChamberCheck</c> item. Returns the last element in the deck, as items are popped from the end.
         /// </summary>
         /// <returns>The <c>BulletType</c> of the next bullet to be fired.</returns>
-        public BulletType Peek() {
-            return this.deck[^1];
+        public BulletType PeekChamber() {
+            return deck[^1];
+        }
+
+        /// <summary>
+        /// Inverts the chamber round, making live rounds blank and blank rounds live.
+        /// </summary>
+        public void InvertChamber() {
+            if (deck[^1] == BulletType.Live) {
+                deck[^1] = BulletType.Blank;
+            } else {
+                deck[^1] = BulletType.Live;
+            }
         }
     }
 }

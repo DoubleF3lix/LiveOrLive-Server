@@ -55,7 +55,7 @@ namespace liveorlive_server.HubPartials
     [Receiver]
     public interface IItemResponse {
         Task ReverseTurnOrderItemUsed();
-        Task RackChamberItemUsed();
+        Task RackChamberItemUsed(BulletType bulletType);
         Task ExtraLifeItemUsed(string target);
         Task PickpocketItemUsed(string target, Item item, string? itemTarget);
         Task LifeGambleItemUsed(int lifeChange);

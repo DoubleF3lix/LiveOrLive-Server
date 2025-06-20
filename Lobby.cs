@@ -45,6 +45,12 @@ namespace liveorlive_server {
         public bool GameStarted { get; set; } = false;
 
         /// <summary>
+        /// Tracks whether or not double damage is enabled.
+        /// </summary>
+        [JsonIgnore]
+        public bool DoubleDamageEnabled = false;
+
+        /// <summary>
         /// The turn order for this lobby.
         /// </summary>
         public List<string> TurnOrder => _turnOrderManager.TurnOrder;
@@ -76,13 +82,13 @@ namespace liveorlive_server {
         /// </summary>
         /// <param name="author">The author of the message by username.</param>
         /// <param name="content">The message content.</param>
-        /// <returns></returns>
+        /// <returns>The author and content as <see cref="ChatMessage"/.></returns>
         public ChatMessage AddChatMessage(string author, string content) => _chat.AddMessage(author, content);
         /// <summary>
         /// Adds a game log message to the lobby.
         /// </summary>
         /// <param name="content">The game log message content.</param>
-        /// <returns></returns>
+        /// <returns>The passed string cast to a <see cref="GameLogMessage"/>.</returns>
         public GameLogMessage AddGameLogMessage(string content) => _gameLog.AddMessage(content);
 
         private readonly Chat _chat = new();
@@ -217,13 +223,102 @@ namespace liveorlive_server {
         /// <returns>The data about the shot, including what type, the damage, and whether or not they shot themselves. Doesn't include <c>shooter</c> or <c>target</c> as these are assumed to be owned by the caller. See <see cref="ShootPlayerResult"/>.</returns>
         public ShootPlayerResult ShootPlayer(Player shooter, Player target) {
             var bulletType = _ammoDeck.Pop();
-            target.Lives -= (int)bulletType;
+            var damage = (int)bulletType * (DoubleDamageEnabled ? 2 : 1);
+            target.Lives -= damage;
+            // Always reset anyways, no point in checking
+            DoubleDamageEnabled = false;
 
             return new ShootPlayerResult {
                 BulletFired = bulletType,
-                Damage = (int)bulletType,
+                Damage = damage,
                 ShotSelf = shooter == target
             };
+        }
+
+        /// <summary>
+        /// Reverses the turn order. Wrapper around <see cref="TurnOrderManager.ReverseTurnOrder"/>.
+        /// </summary>
+        public void ReverseTurnOrder() {
+            _turnOrderManager.ReverseTurnOrder();
+        }
+
+        /// <summary>
+        /// Removes a bullet from the chamber.
+        /// </summary>
+        /// <returns>The bullet that was removed. See <see cref="RackChamberResult"/>.</returns>
+        public RackChamberResult RackChamber() {
+            return new RackChamberResult {
+                BulletType = _ammoDeck.Pop()
+            };
+        }
+
+        /// <summary>
+        /// Gives an extra life to the specified player.
+        /// </summary>
+        /// <param name="player">The player to give a life to.</param>
+        public void GiveExtraLife(Player player) {
+            player.Lives += 1;
+        }
+
+        /// <summary>
+        /// Gives/removes lives from the specified player according to <see cref="Settings.LifeGambleWeights"/>.
+        /// </summary>
+        /// <param name="player">The player to gamble lives on.</param>
+        /// <returns>The gain/loss of lives for the player. See <see cref="LifeGambleResult"/>.</returns>
+        public LifeGambleResult LifeGamble(Player player) {
+            var random = new Random();
+            var options = new List<int>();
+
+            foreach (var weights in Settings.LifeGambleWeights) {
+                options.AddRange(Enumerable.Repeat(weights.Key, weights.Value));
+            }
+            var roll = options[random.Next(options.Count)];
+            player.Lives += roll;
+
+            return new LifeGambleResult {
+                LifeChange = roll
+            };
+        }
+
+        /// <summary>
+        /// Inverts the chamber round. Wrapper around <see cref="AmmoDeck.InvertChamber"/>.
+        /// </summary>
+        public void InvertChamber() {
+            _ammoDeck.InvertChamber();
+        }
+
+        /// <summary>
+        /// Peeks the chamber round. Wrapper around <see cref="AmmoDeck.PeekChamber"/>.
+        /// </summary>
+        /// <returns>The current chamber round type. See <see cref="ChamberCheckResult"/>.</returns>
+        public ChamberCheckResult PeekChamber() {
+            var result = _ammoDeck.PeekChamber();
+            return new ChamberCheckResult {
+                ChamberRoundType = result
+            };
+        }
+
+        /// <summary>
+        /// Enables double damage (sets the boolean flag).
+        /// </summary>
+        public void EnableDoubleDamage() {
+            DoubleDamageEnabled = true;
+        }
+        
+        /// <summary>
+        /// Marks the specified player as skipped.
+        /// </summary>
+        /// <param name="player">The player to skip.</param>
+        public void SkipPlayer(Player player) {
+            player.IsSkipped = true;
+        }
+
+        /// <summary>
+        /// Marks a player as ricocheted.
+        /// </summary>
+        /// <param name="player">The player to protect with ricochet.</param>
+        public void RicochetPlayer(Player player) {
+            player.IsRicochet = true;
         }
 
         /// <summary>
