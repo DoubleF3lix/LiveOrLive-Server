@@ -292,7 +292,7 @@ namespace liveorlive_server.HubPartials {
             var result = lobby.LifeGamble(user);
             await Clients.Group(lobby.Id).LifeGambleItemUsed(result.LifeChange, itemSource.Username);
             // Grammar is *still* important, kids
-            await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $"from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(Math.Abs(result.LifeChange) == 1 ? "life" : "lives")}.");
+            await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $" from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(Math.Abs(result.LifeChange) == 1 ? "life" : "lives")}.");
 
             // Need to check if we eliminated ourselves (whoops!)
             await OnActionEnd(lobby, false);
@@ -369,7 +369,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.DoubleDamage)) {
+            if (!itemSource.Items.Contains(Item.DoubleDamage)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Double Damage item!" : $"{itemSource.Username} doesn't have a Double Damage item!");
                 return false;
             }
@@ -379,6 +379,7 @@ namespace liveorlive_server.HubPartials {
                 return false;
             }
 
+            itemSource.Items.Remove(Item.DoubleDamage);
             lobby.EnableDoubleDamage();
             await Clients.Group(lobby.Id).DoubleDamageItemUsed(itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} activated double damage for the next shot.");
@@ -407,7 +408,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.Skip)) {
+            if (!itemSource.Items.Contains(Item.Skip)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Skip item!" : $"{itemSource.Username} doesn't have a Skip item!");
                 return false;
             }
@@ -417,9 +418,15 @@ namespace liveorlive_server.HubPartials {
                 return false;
             }
 
+            itemSource.Items.Remove(Item.Skip);
             lobby.SkipPlayer(targetPlayer);
             await Clients.Group(lobby.Id).SkipItemUsed(target, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} skipped {(user == targetPlayer ? "themselves" : targetPlayer.Username)}.");
+
+            // Self-skipping
+            if (user == targetPlayer) {
+                await NewTurn(lobby);
+            }
 
             return true;
         }
@@ -456,7 +463,7 @@ namespace liveorlive_server.HubPartials {
                 return false;
             }
 
-            lobby.SkipPlayer(targetPlayer);
+            lobby.RicochetPlayer(targetPlayer);
             await Clients.Group(lobby.Id).RicochetItemUsed(target, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
 

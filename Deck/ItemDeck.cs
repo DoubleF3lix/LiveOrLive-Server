@@ -60,6 +60,7 @@ namespace liveorlive_server.Deck {
             var itemsToDeal = Math.Min(settings.MaxItems - player.Items.Count, this.numItemsToDeal);
             var output = new List<Item>(itemsToDeal);
             output.AddRange(Enumerable.Range(0, itemsToDeal).Select(_ => Pop()));
+            output = [Item.Pickpocket, Item.Skip, Item.Skip, Item.Ricochet];
             player.Items.AddRange(output);
             return output;
         }
