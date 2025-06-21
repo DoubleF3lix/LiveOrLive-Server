@@ -292,7 +292,7 @@ namespace liveorlive_server.HubPartials {
             var result = lobby.LifeGamble(user);
             await Clients.Group(lobby.Id).LifeGambleItemUsed(result.LifeChange, itemSource.Username);
             // Grammar is *still* important, kids
-            await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $"from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(result.LifeChange == 1 ? "life" : "lives")}.");
+            await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $"from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(Math.Abs(result.LifeChange) == 1 ? "life" : "lives")}.");
 
             // Need to check if we eliminated ourselves (whoops!)
             await OnActionEnd(lobby, false);
