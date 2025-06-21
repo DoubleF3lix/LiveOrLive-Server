@@ -14,4 +14,22 @@ namespace liveorlive_server.Enums {
         Skip,
         Ricochet
     }
+
+    public static class ItemExtension {
+        public static string? ToFriendlyString(this Item item) {
+            return item switch {
+                Item.ReverseTurnOrder => "Reverse Turn Order",
+                Item.RackChamber => "Rack Chamber",
+                Item.ExtraLife => "Extra Life",
+                Item.Pickpocket => "Pickpocket",
+                Item.LifeGamble => "Life Gamble",
+                Item.Invert => "Invert",
+                Item.ChamberCheck => "Chamber Check",
+                Item.DoubleDamage => "Double Damage",
+                Item.Skip => "Skip",
+                Item.Ricochet => "Ricochet",
+                _ => "null"
+            };
+        }
+    }
 }

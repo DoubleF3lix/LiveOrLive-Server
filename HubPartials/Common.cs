@@ -129,7 +129,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             lobby.ReverseTurnOrder();
-            await Clients.Group(lobby.Id).ReverseTurnOrderItemUsed();
+            await Clients.Group(lobby.Id).ReverseTurnOrderItemUsed(itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} reversed the turn order.");
 
             return true;
@@ -156,7 +156,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             var result = lobby.RackChamber();
-            await Clients.Group(lobby.Id).RackChamberItemUsed(result.BulletType);
+            await Clients.Group(lobby.Id).RackChamberItemUsed(result.BulletType, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} racked the chamber, ejecting a {(result.BulletType == BulletType.Live ? "live" : "blank")} round.");
 
             return true;
@@ -189,7 +189,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             lobby.GiveExtraLife(targetPlayer);
-            await Clients.Group(lobby.Id).ExtraLifeItemUsed(target);
+            await Clients.Group(lobby.Id).ExtraLifeItemUsed(target, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? " stole an item and" : "")} gave {(user == targetPlayer ? "themselves" : targetPlayer.Username)} an extra life.");
 
             return true;
@@ -228,13 +228,13 @@ namespace liveorlive_server.HubPartials {
 
             // Don't remove, in case usage fails
             if (!stealTargetPlayer.Items.Contains(itemToSteal)) {
-                await Clients.Caller.ActionFailed($"{stealTargetPlayer.Username} doesn't have a {itemToSteal} item!");
+                await Clients.Caller.ActionFailed($"{stealTargetPlayer.Username} doesn't have a {itemToSteal.ToFriendlyString()} item!");
                 return false;
             }
 
             if (itemToSteal == Item.ExtraLife || itemToSteal == Item.Skip || itemToSteal == Item.Ricochet) {
                 if (stolenItemTarget == null) {
-                    await Clients.Caller.ActionFailed($"{itemToSteal} requires an item target!");
+                    await Clients.Caller.ActionFailed($"{itemToSteal.ToFriendlyString()} requires an item target!");
                     return false;
                 }
 
@@ -263,7 +263,7 @@ namespace liveorlive_server.HubPartials {
             if (stolenItemUseSuccess) {
                 user.Items.Remove(Item.Pickpocket);
                 stealTargetPlayer.Items.Remove(itemToSteal);
-                await Clients.Group(lobby.Id).PickpocketItemUsed(stealTarget, itemToSteal, stolenItemTarget);
+                await Clients.Group(lobby.Id).PickpocketItemUsed(stealTarget, itemToSteal, stolenItemTarget, user.Username);
             }
 
             return stolenItemUseSuccess;
@@ -290,7 +290,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             var result = lobby.LifeGamble(user);
-            await Clients.Group(lobby.Id).LifeGambleItemUsed(result.LifeChange);
+            await Clients.Group(lobby.Id).LifeGambleItemUsed(result.LifeChange, itemSource.Username);
             // Grammar is *still* important, kids
             await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $"from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(result.LifeChange == 1 ? "life" : "lives")}.");
 
@@ -321,7 +321,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             lobby.InvertChamber();
-            await Clients.Group(lobby.Id).InvertItemUsed();
+            await Clients.Group(lobby.Id).InvertItemUsed(itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} inverted the chamber round.");
 
             return true;
@@ -348,7 +348,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             var result = lobby.PeekChamber();
-            await Clients.Group(lobby.Id).ChamberCheckItemUsed(result.ChamberRoundType);
+            await Clients.Group(lobby.Id).ChamberCheckItemUsed(result.ChamberRoundType, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} peeked the chamber. It's a {result.ChamberRoundType.ToString().ToLower()} round!");
 
             return true;
@@ -369,7 +369,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.ChamberCheck)) {
+            if (!itemSource.Items.Remove(Item.DoubleDamage)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Double Damage item!" : $"{itemSource.Username} doesn't have a Double Damage item!");
                 return false;
             }
@@ -380,7 +380,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             lobby.EnableDoubleDamage();
-            await Clients.Group(lobby.Id).DoubleDamageItemUsed();
+            await Clients.Group(lobby.Id).DoubleDamageItemUsed(itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} activated double damage for the next shot.");
 
             return true;
@@ -418,7 +418,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             lobby.SkipPlayer(targetPlayer);
-            await Clients.Group(lobby.Id).SkipItemUsed(target);
+            await Clients.Group(lobby.Id).SkipItemUsed(target, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} skipped {(user == targetPlayer ? "themselves" : targetPlayer.Username)}.");
 
             return true;
@@ -457,7 +457,7 @@ namespace liveorlive_server.HubPartials {
             }
 
             lobby.SkipPlayer(targetPlayer);
-            await Clients.Group(lobby.Id).RicochetItemUsed(target);
+            await Clients.Group(lobby.Id).RicochetItemUsed(target, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
 
             return true;

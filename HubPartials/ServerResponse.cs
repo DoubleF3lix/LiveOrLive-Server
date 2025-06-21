@@ -54,15 +54,16 @@ namespace liveorlive_server.HubPartials
 
     [Receiver]
     public interface IItemResponse {
-        Task ReverseTurnOrderItemUsed();
-        Task RackChamberItemUsed(BulletType bulletType);
-        Task ExtraLifeItemUsed(string target);
-        Task PickpocketItemUsed(string target, Item item, string? itemTarget);
-        Task LifeGambleItemUsed(int lifeChange);
-        Task InvertItemUsed();
-        Task ChamberCheckItemUsed(BulletType bulletType);
-        Task DoubleDamageItemUsed();
-        Task SkipItemUsed(string target);
-        Task RicochetItemUsed(string? target);
+        Task ReverseTurnOrderItemUsed(string itemSourceUsername);
+        Task RackChamberItemUsed(BulletType bulletType, string itemSourceUsername);
+        Task ExtraLifeItemUsed(string target, string itemSourceUsername);
+        // The itemSourceUsername is always currentTurn, but for consistency we pass it anyway
+        Task PickpocketItemUsed(string target, Item item, string? itemTarget, string itemSourceUsername);
+        Task LifeGambleItemUsed(int lifeChange, string itemSourceUsername);
+        Task InvertItemUsed(string itemSourceUsername);
+        Task ChamberCheckItemUsed(BulletType bulletType, string itemSourceUsername);
+        Task DoubleDamageItemUsed(string itemSourceUsername);
+        Task SkipItemUsed(string target, string itemSourceUsername);
+        Task RicochetItemUsed(string? target, string itemSourceUsername);
     }
 }
