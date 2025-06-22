@@ -1,4 +1,5 @@
 ﻿using liveorlive_server.Enums;
+using liveorlive_server.Models;
 using liveorlive_server.Models.Results;
 using Microsoft.AspNetCore.SignalR;
 
@@ -13,7 +14,7 @@ namespace liveorlive_server.HubPartials {
         private async Task StartGame(Lobby lobby) {
             var turnOrder = lobby.StartGame();
             await Clients.Group(lobby.Id).GameStarted(turnOrder);
-            await AddGameLogMessage(lobby, $"The game has started with {lobby.Players.Count(p => !p.IsSpectator)} players.");
+            await AddGameLogMessage(lobby, $"The game has started with {lobby.Players.Count} players.");
         }
 
         /// <summary>
@@ -91,7 +92,7 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby to check the end game condition of.</param>
         /// <returns>Whether or not the conditions were met and the game was ended.</returns>
         private async Task<bool> EndGameConditional(Lobby lobby) {
-            if (lobby.Players.Count(player => player.InGame && !player.IsSpectator && player.Lives > 0) <= 1) {
+            if (lobby.Players.Count(player => player.InGame && player.Lives > 0) <= 1) {
                 await EndGame(lobby);
                 return true;
             }
@@ -123,7 +124,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.ReverseTurnOrder)) {
+            if (!lobby.RemoveItemFromPlayer(itemSource, Item.ReverseTurnOrder)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Reverse Turn Order item!" : $"{itemSource.Username} doesn't have a Reverse Turn Order item!");
                 return false;
             }
@@ -150,7 +151,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.RackChamber)) {
+            if (!lobby.RemoveItemFromPlayer(itemSource, Item.RackChamber)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Rack Chamber item!" : $"{itemSource.Username} doesn't have a Rack Chamber item!");
                 return false;
             }
@@ -183,7 +184,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.ExtraLife)) {
+            if (!lobby.RemoveItemFromPlayer(itemSource, Item.ExtraLife)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have an Extra Life item!" : $"{itemSource.Username} doesn't have an Extra Life item!");
                 return false;
             }
@@ -261,8 +262,8 @@ namespace liveorlive_server.HubPartials {
             // Remove items only on success
             // The above calls should handle printing any success/error messages, so we're done
             if (stolenItemUseSuccess) {
-                user.Items.Remove(Item.Pickpocket);
-                stealTargetPlayer.Items.Remove(itemToSteal);
+                lobby.RemoveItemFromPlayer(user, Item.Pickpocket);
+                lobby.RemoveItemFromPlayer(stealTargetPlayer, itemToSteal);
                 await Clients.Group(lobby.Id).PickpocketItemUsed(stealTarget, itemToSteal, stolenItemTarget, user.Username);
             }
 
@@ -284,7 +285,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.LifeGamble)) {
+            if (!lobby.RemoveItemFromPlayer(itemSource, Item.LifeGamble)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Life Gamble item!" : $"{itemSource.Username} doesn't have a Life Gamble item!");
                 return false;
             }
@@ -315,7 +316,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.Invert)) {
+            if (!lobby.RemoveItemFromPlayer(itemSource, Item.Invert)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have an Invert item!" : $"{itemSource.Username} doesn't have an Invert item!");
                 return false;
             }
@@ -342,7 +343,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.ChamberCheck)) {
+            if (!lobby.RemoveItemFromPlayer(itemSource, Item.ChamberCheck)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Chamber Check item!" : $"{itemSource.Username} doesn't have a Chamber Check item!");
                 return false;
             }
@@ -379,7 +380,7 @@ namespace liveorlive_server.HubPartials {
                 return false;
             }
 
-            itemSource.Items.Remove(Item.DoubleDamage);
+            lobby.RemoveItemFromPlayer(itemSource, Item.DoubleDamage);
             lobby.EnableDoubleDamage();
             await Clients.Group(lobby.Id).DoubleDamageItemUsed(itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} activated double damage for the next shot.");
@@ -418,8 +419,8 @@ namespace liveorlive_server.HubPartials {
                 return false;
             }
 
-            itemSource.Items.Remove(Item.Skip);
-            lobby.SkipPlayer(targetPlayer);
+            lobby.RemoveItemFromPlayer(itemSource, Item.Skip);
+            lobby.SkipPlayer(targetPlayer); 
             await Clients.Group(lobby.Id).SkipItemUsed(target, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} skipped {(user == targetPlayer ? "themselves" : targetPlayer.Username)}.");
 
@@ -452,7 +453,7 @@ namespace liveorlive_server.HubPartials {
 
             itemSource ??= user;
 
-            if (!itemSource.Items.Remove(Item.Ricochet)) {
+            if (!lobby.RemoveItemFromPlayer(itemSource, Item.Ricochet)) {
                 await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Ricochet item!" : $"{itemSource.Username} doesn't have a Ricochet item!");
                 return false;
             }

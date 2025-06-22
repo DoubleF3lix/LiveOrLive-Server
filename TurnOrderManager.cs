@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using liveorlive_server.Models;
+using System.Diagnostics.CodeAnalysis;
 
 namespace liveorlive_server {
     /// <summary>
@@ -6,27 +7,27 @@ namespace liveorlive_server {
     /// </summary>
     /// <param name="players">The list of players for the lobby. Spectators are automatically filtered out and can be safely included.</param>
     public class TurnOrderManager(List<Player> players) {
-        private List<Player> nonSpectatorPlayers = players.Where(p => !p.IsSpectator).ToList();
+        private List<Player> players = players;
         private int currentTurnIndex = -1;
 
         /// <summary>
         /// Gets the turn order by usernames. Used for display and doesn't change after initialization.
         /// </summary>
-        public List<string> TurnOrder => nonSpectatorPlayers.Select(p => p.Username).ToList();
+        public List<string> TurnOrder => players.Select(p => p.Username).ToList();
 
         /// <summary>
         /// Advances the turn by one, skipping spectators and dead players, looping around as necessary. Does not skip skipped players, since that should be handled by the lobby itself.
         /// </summary>
         /// <exception cref="Exception">Thrown if there are no eligible players left in the turn order (all dead).</exception>
         public void Advance() {
-            if (nonSpectatorPlayers.All(p => p.Lives <= 0)) {
+            if (players.All(p => p.Lives <= 0)) {
                 throw new Exception("Can't advance empty turn order");
             }
 
             Player? currentPlayerForTurn;
             do {
-                currentTurnIndex = (currentTurnIndex + 1) % nonSpectatorPlayers.Count;
-                currentPlayerForTurn = nonSpectatorPlayers[currentTurnIndex];
+                currentTurnIndex = (currentTurnIndex + 1) % players.Count;
+                currentPlayerForTurn = players[currentTurnIndex];
             } while (currentPlayerForTurn.Lives <= 0);
         }
 
@@ -48,13 +49,13 @@ namespace liveorlive_server {
         /// <param name="player">An <c>out</c> variable for the player instance for the current turn.</param>
         /// <returns><c>true</c> if there is a player for the current turn, <c>false</c> if not (likely because none was initialized).</returns>
         public bool TryGetPlayerForCurrentTurn([NotNullWhen(true)] out Player? player) {
-            player = currentTurnIndex >= 0 ? nonSpectatorPlayers[currentTurnIndex] : null;
+            player = currentTurnIndex >= 0 ? players[currentTurnIndex] : null;
             return player != null;
         }
 
         public void ReverseTurnOrder() {
-            nonSpectatorPlayers.Reverse();
-            currentTurnIndex = nonSpectatorPlayers.Count - currentTurnIndex - 1;
+            players.Reverse();
+            currentTurnIndex = players.Count - currentTurnIndex - 1;
         }
     }
 }

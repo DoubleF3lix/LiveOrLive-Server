@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using liveorlive_server.Models;
+using Microsoft.AspNetCore.SignalR;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 
 namespace liveorlive_server.Extensions {
     public static class HubCallerContextExtension {
@@ -17,23 +19,31 @@ namespace liveorlive_server.Extensions {
             return context.TryGetLobbyId(out var lobbyId) && server.TryGetLobbyById(lobbyId, out lobby);
         }
 
+        public static bool TryGetClient(this HubCallerContext context, Server server, [NotNullWhen(true)] out ConnectedClient? client) {
+            client = null;
+            if (context.TryGetLobby(server, out var lobby)) {
+                client = lobby.Clients.FirstOrDefault(client => client.ConnectionId == context.ConnectionId);
+            }
+            return client != null;
+        }
+
         public static bool TryGetPlayer(this HubCallerContext context, Server server, [NotNullWhen(true)] out Player? player) {
             player = null;
             if (context.TryGetLobby(server, out var lobby)) {
-                player = lobby.Players.FirstOrDefault(player => player.connectionId == context.ConnectionId);
+                player = lobby.Players.FirstOrDefault(player => player.ConnectionId == context.ConnectionId);
             }
             return player != null;
         }
 
-        public static string GetLobbyId(this HubCallerContext context) {
-            if (context.TryGetLobbyId(out var result)) {
+        public static Lobby GetLobby(this HubCallerContext context, Server server) {
+            if (context.TryGetLobby(server, out var result)) {
                 return result;
             }
             throw new InvalidOperationException();
         }
 
-        public static Lobby GetLobby(this HubCallerContext context, Server server) {
-            if (context.TryGetLobby(server, out var result)) {
+        public static ConnectedClient GetClient(this HubCallerContext context, Server server) {
+            if (context.TryGetClient(server, out var result)) {
                 return result;
             }
             throw new InvalidOperationException();

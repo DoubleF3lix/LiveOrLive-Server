@@ -34,6 +34,10 @@ namespace liveorlive_server {
         /// The list of players connected to this lobby.
         /// </summary>
         public List<Player> Players { get; private set; } = [];
+        /// <summary>
+        /// The list of spectators connected to this lobby.
+        /// </summary>
+        public List<Spectator> Spectators { get; private set; } = [];
 
         /// <summary>
         /// The lobby host, by username.
@@ -49,6 +53,12 @@ namespace liveorlive_server {
         /// </summary>
         [JsonIgnore]
         public bool DoubleDamageEnabled = false;
+
+        /// <summary>
+        /// A merging of <see cref="Players"/> and <see cref="Spectators"/>.
+        /// </summary>
+        [JsonIgnore]
+        public List<ConnectedClient> Clients => Players.Cast<ConnectedClient>().Union(Spectators).ToList();
 
         /// <summary>
         /// The turn order for this lobby.
@@ -175,7 +185,7 @@ namespace liveorlive_server {
             var dealtItems = new Dictionary<string, List<Item>>();
 
             _itemDeck.Refresh();
-            foreach (Player player in Players.Where(p => !p.IsSpectator)) {
+            foreach (Player player in Players) {
                 var items = _itemDeck.DealItemsToPlayer(player);
                 dealtItems.Add(player.Username, items);
             }
@@ -233,6 +243,20 @@ namespace liveorlive_server {
                 Damage = damage,
                 ShotSelf = shooter == target
             };
+        }
+
+        /// <summary>
+        /// Removes an item from the specified player and puts it back in the item deck, if successful.
+        /// </summary>
+        /// <param name="player">The player to remove the item from.</param>
+        /// <param name="item">The item to remove.</param>
+        /// <returns>Whether or not the item was removed and put back in the deck successfully.</returns>
+        public bool RemoveItemFromPlayer(Player player, Item item) {
+            var success = player.Items.Remove(item);
+            if (success) {
+                _itemDeck.PutItemBack(item);
+            }
+            return success;
         }
 
         /// <summary>
@@ -322,37 +346,58 @@ namespace liveorlive_server {
         }
 
         /// <summary>
-        /// Registers a <c>Player</c> object with the lobby by username. Handles assigning an existing, not in-game player, otherwise makes a new object. Call this when a player is connecting to the lobby.
-        /// Callers of this should check the player doesn't already exist in the lobby first.
-        /// If the game is in progress and the username isn't already registered with this lobby, they will be marked as a spectator.
+        /// Registers a <see cref="ConnectedClient"/> object with the lobby by username. Handles assigning an existing, not in-game client, otherwise makes a new object. Call this when a client is connecting to the lobby.
+        /// Callers of this should check the client doesn't already exist in the lobby first.
         /// </summary>
-        /// <param name="connectionId">Connection ID of the player from SignalR, to be associated with the <c>Player</c> instance.</param>
-        /// <param name="username">Username of the player</param>
-        /// <returns>A new <c>Player</c> instance with the passed username and connection ID</returns>
-        /// <exception cref="Exception">Thrown if the player already exists and is in-game.</exception>
-        public Player AddPlayer(string? connectionId, string username) {
-            if (TryGetPlayerByUsername(username, out var player)) {
-                if (player.InGame) {
-                    throw new Exception("Player already exists and is in-game");
+        /// <param name="connectionId">Connection ID of the player from SignalR, to be associated with the <see cref="ConnectedClient"/> instance.</param>
+        /// <param name="username">Username of the client.</param>
+        /// <returns>Either <see cref="Player"/> or <see cref="Spectator"/>, depending on <see cref="GameStarted"/>.</returns>
+        /// <exception cref="Exception">Thrown if a client with that username already exists and is in-game.</exception>
+        public ConnectedClient AddClient(string connectionId, string username) {
+            if (TryGetClientByUsername(username, out var client)) {
+                // Mark as in-game if player. All Spectators are assumed to be in-game.
+                switch (client) {
+                    case Player player when player.InGame:
+                        throw new Exception("Client already exists and is in-game");
+                    case Player player:
+                        player.InGame = true;
+                        break;
                 }
-                player.InGame = true;
-                player.connectionId = connectionId;
+                client.ConnectionId = connectionId;
             } else {
-                player = new Player(Settings, username, connectionId, false);
-                Players.Add(player);
+                client = GameStarted
+                    ? new Spectator(username, connectionId)
+                    : new Player(Settings, username, connectionId);
+
+                if (client is Player newPlayer) {
+                    Players.Add(newPlayer);
+                } else if (client is Spectator newSpectator) {
+                    Spectators.Add(newSpectator);
+                }
             }
-            return player;
+            return client;
         }
 
         /// <summary>
         /// Attempts to fetch a player from this lobby by username.
         /// </summary>
         /// <param name="username">The username to search by.</param>
-        /// <param name="player">The Player instance for the matched player, or <c>null</c> if not found.</param>
+        /// <param name="player">The <see cref="Player"/> instance for the matched player, or <c>null</c> if not found.</param>
         /// <returns>A boolean matching if the player could be found.</returns>
         public bool TryGetPlayerByUsername(string username, [NotNullWhen(true)] out Player? player) {
             player = Players.FirstOrDefault(player => player.Username == username);
             return player != null;
+        }
+
+        /// <summary>
+        /// Attempts to fetch a client from this lobby by username.
+        /// </summary>
+        /// <param name="username">The username to search by.</param>
+        /// <param name="client">The <see cref="ConnectedClient"/> instance for the matched client, or <c>null</c> if not found.</param>
+        /// <returns>A boolean matching if the client could be found.</returns>
+        public bool TryGetClientByUsername(string username, [NotNullWhen(true)] out ConnectedClient? client) {
+            client = Clients.FirstOrDefault(client => client.Username == username);
+            return client != null;
         }
     }
 }

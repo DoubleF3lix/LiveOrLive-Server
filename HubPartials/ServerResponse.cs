@@ -28,10 +28,11 @@ namespace liveorlive_server.HubPartials
     public interface IConnectionResponse {
         Task ConnectionSuccess();
         Task ConnectionFailed(string reason);
-        Task PlayerJoined(Player player);
-        Task PlayerLeft(string username);
+        Task ClientJoined(ConnectedClient client);
+        Task ClientLeft(string username);
+        // TODO make this function and add game log message
         Task HostChanged(string? previous, string? current, string? reason);
-        Task PlayerKicked(string username);
+        Task ClientKicked(string username);
     }
 
     [Receiver]
