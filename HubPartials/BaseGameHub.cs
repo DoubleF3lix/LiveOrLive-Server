@@ -40,21 +40,12 @@ namespace liveorlive_server.HubPartials {
                 return;
             }
 
-            var result = lobby.ShootPlayer(shooterPlayer, targetPlayer);
-
-            // Be verbose about who shot who (even if it's themselves)
-            await Clients.Group(lobby.Id).PlayerShotAt(target, result.BulletFired, result.Damage);
-
-            string message;
-            if (result.BulletFired == BulletType.Blank) {
-                message = $"{shooterPlayer.Username} shot {(result.ShotSelf ? "themselves" : target)} with a blank round.";
-            } else {
-                message = $"{shooterPlayer.Username} shot {target} with a live round for {result.Damage} damage.";
+            if (targetPlayer.Lives == 0) {
+                await Clients.Caller.ActionFailed("You can't shoot a dead player!");
+                return;
             }
 
-            await AddGameLogMessage(lobby, message);
-            // It's a turn ending action if it was not a blank round fired at themselves
-            await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
+            await ShootPlayerActual(lobby, shooterPlayer, targetPlayer);
         }
     }
 }

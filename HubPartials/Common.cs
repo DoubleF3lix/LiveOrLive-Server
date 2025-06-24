@@ -50,6 +50,10 @@ namespace liveorlive_server.HubPartials {
                         break;
                 }
             }
+
+            if (lobby.CurrentTurn != null && lobby.TryGetPlayerByUsername(lobby.CurrentTurn, out var currentTurnPlayer) && !currentTurnPlayer.InGame) {
+                await ForfeitTurn(lobby, currentTurnPlayer);
+            }
         }
 
         /// <summary>
@@ -76,14 +80,15 @@ namespace liveorlive_server.HubPartials {
                 return;
             }
 
-            if (isTurnEndingMove) {
-                await NewTurn(lobby);
-            }
-
             // Check for round end
             if (lobby.AmmoLeftInChamber <= 0) {
                 await NewRound(lobby);
             }
+
+            if (isTurnEndingMove) {
+                await NewTurn(lobby);
+            }
+
         }
 
         /// <summary>
@@ -92,7 +97,7 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby to check the end game condition of.</param>
         /// <returns>Whether or not the conditions were met and the game was ended.</returns>
         private async Task<bool> EndGameConditional(Lobby lobby) {
-            if (lobby.Players.Count(player => player.InGame && player.Lives > 0) <= 1) {
+            if (lobby.Players.Count(player => player.Lives > 0) <= 1) {
                 await EndGame(lobby);
                 return true;
             }
@@ -469,6 +474,23 @@ namespace liveorlive_server.HubPartials {
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
 
             return true;
+        }
+
+        private async Task ShootPlayerActual(Lobby lobby, Player shooter, Player target) {
+            var result = lobby.ShootPlayer(shooter, target);
+
+            // Be verbose about who shot who (even if it's themselves)
+            await Clients.Group(lobby.Id).PlayerShotAt(target.Username, result.BulletFired, result.Damage);
+
+            await AddGameLogMessage(lobby, $"{shooter.Username} shot {(result.ShotSelf ? "themselves" : target.Username)} with a {result.BulletFired.ToFriendlyString()} round{(result.BulletFired == BulletType.Live ? $" for {result.Damage} damage" : "")}.");
+            // It's a turn ending action if it was not a blank round fired at themselves
+            await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
+        }
+
+        private async Task ForfeitTurn(Lobby lobby, Player player) {
+            // Make the player shoot themselves
+            await ShootPlayerActual(lobby, player, player);
+            await NewTurn(lobby);
         }
     }
 }

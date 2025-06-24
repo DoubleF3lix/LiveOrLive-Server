@@ -15,6 +15,8 @@ namespace liveorlive_server.Models {
         public int MinLiveRounds { get; set; } = 1;
         public int MaxBlankRounds { get; set; } = 4;
         public int MaxLiveRounds { get; set; } = 4;
+        // Whether or not the client should show how many rounds of each type have been fired
+        public bool ShowFiredRoundsTally { get; set; } = false;
 
         // Lives
         // DefaultLives is what players start with, MaxLives is the absolute max they can get with Extra Life items
@@ -39,7 +41,7 @@ namespace liveorlive_server.Models {
         // Allows the above to exceed MaxItems
         public bool AllowLootItemsExceedMax { get; set; } = false;
 
-        // Item enable (self-explanatory)
+        // Item enablement (self-explanatory)
         public bool EnableReverseTurnOrderItem { get; set; } = true;
         public bool EnableRackChamberItem { get; set; } = true;
         public bool EnableExtraLifeItem { get; set; } = true;

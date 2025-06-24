@@ -81,11 +81,6 @@ namespace liveorlive_server {
         /// </summary>
         [JsonIgnore]
         public List<GameLogMessage> GameLogMessages => _gameLog.Messages;
-        /// <summary>
-        /// Gets the four most recent game log messages.
-        /// </summary>
-        [JsonIgnore]
-        public List<GameLogMessage> RecentGameLogMessages => _gameLog.GetLastMessages(2);
 
         /// <summary>
         /// Adds a chat message. Does not verify the username is valid.

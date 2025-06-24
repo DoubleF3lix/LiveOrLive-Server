@@ -7,7 +7,7 @@ namespace liveorlive_server {
     /// </summary>
     /// <param name="players">The list of players for the lobby. Spectators are automatically filtered out and can be safely included.</param>
     public class TurnOrderManager(List<Player> players) {
-        private List<Player> players = players;
+        private readonly List<Player> players = players;
         private int currentTurnIndex = -1;
 
         /// <summary>
