@@ -8,6 +8,19 @@ namespace liveorlive_server.HubPartials {
     // The goal is to keep the hub logic and the game logic isolated, with this class providing methods that interface between the two.
     public partial class LiveOrLiveHub : Hub<IHubServerResponse> {
         /// <summary>
+        /// Transfers the lobby host to another player. Handles informing clients of the old host and the new one.
+        /// </summary>
+        /// <param name="lobby">The lobby to change the host of.</param>
+        /// <param name="newHost">The username of the new host.</param>
+        /// <param name="reason">The reason for the change.</param>
+        public async Task ChangeHost(Lobby lobby, string? newHost, string reason) {
+            var oldHost = lobby.Host;
+            lobby.Host = newHost;
+            await Clients.Group(lobby.Id).HostChanged(oldHost, newHost, reason);
+            await AddGameLogMessage(lobby, $"{newHost} is now the host. Reason: {reason}.");
+        }
+
+        /// <summary>
         /// Starts the game on the specified lobby.
         /// </summary>
         /// <param name="lobby">The lobby to start the game of.</param>

@@ -8,7 +8,7 @@ namespace liveorlive_server.Models {
         // Private = True will hide game from lobby selector
         public bool Private { get; set; } = false;
         // How many players can be in a game. No cap on spectators.
-        public int MaxPlayers { get; set; } = 8;
+        public int MaxPlayers { get; set; } = 8; // TODO
 
         // Chamber (self-explanatory)
         public int MinBlankRounds { get; set; } = 1;
@@ -21,11 +21,11 @@ namespace liveorlive_server.Models {
         // Lives
         // DefaultLives is what players start with, MaxLives is the absolute max they can get with Extra Life items
         public int DefaultLives { get; set; } = 3;
-        public int MaxLives { get; set; } = 8;
+        public int MaxLives { get; set; } = 8; // TODO
         // Allows burning Extra Life item (Extra Life can never exceed MaxLives)
-        public bool AllowExtraLifeWhenFull { get; set; } = false;
+        public bool AllowExtraLifeWhenFull { get; set; } = false; // TODO
         // But Life Gamble can if this is true
-        public bool AllowLifeGambleExceedMax { get; set; } = true;
+        public bool AllowLifeGambleExceedMax { get; set; } = true; // TODO
 
         // Item distribution
         // If false, MaxItemsPerRound is dealt every round, not exceeding MaxItems
@@ -109,37 +109,37 @@ namespace liveorlive_server.Models {
          * Sudden Death can be disabled with SuddenDeathActivationPoint = 0, and this value is useless if AllowPlayerRevival = false
          */
         public void Normalize() {
-            this.MaxPlayers = Math.Clamp(this.MaxPlayers, 2, 100);
+            MaxPlayers = Math.Clamp(MaxPlayers, 2, 100);
 
             // Min <= Max = [1..12]
-            this.MaxBlankRounds = Math.Clamp(this.MaxBlankRounds, 1, 12);
-            this.MaxLiveRounds = Math.Clamp(this.MaxLiveRounds, 1, 12);
-            this.MinBlankRounds = Math.Clamp(this.MinBlankRounds, 1, this.MaxBlankRounds);
-            this.MinLiveRounds = Math.Clamp(this.MinLiveRounds, 1, this.MaxLiveRounds);
+            MaxBlankRounds = Math.Clamp(MaxBlankRounds, 1, 12);
+            MaxLiveRounds = Math.Clamp(MaxLiveRounds, 1, 12);
+            MinBlankRounds = Math.Clamp(MinBlankRounds, 1, MaxBlankRounds);
+            MinLiveRounds = Math.Clamp(MinLiveRounds, 1, MaxLiveRounds);
 
-            this.MaxLives = Math.Clamp(this.MaxLives, 1, 100);
-            this.DefaultLives = Math.Clamp(this.DefaultLives, 0, this.MaxLives);
+            MaxLives = Math.Clamp(MaxLives, 1, 100);
+            DefaultLives = Math.Clamp(DefaultLives, 0, MaxLives);
 
             // MinPR <= MaxPR <= Max = [1..100]
-            this.MaxItems = Math.Clamp(this.MaxItems, 0, 100);
-            this.MaxItemsPerRound = Math.Clamp(this.MaxItemsPerRound, 0, this.MaxItems);
-            this.MinItemsPerRound = Math.Clamp(this.MinItemsPerRound, 0, this.MaxItemsPerRound);
+            MaxItems = Math.Clamp(MaxItems, 0, 100);
+            MaxItemsPerRound = Math.Clamp(MaxItemsPerRound, 0, MaxItems);
+            MinItemsPerRound = Math.Clamp(MinItemsPerRound, 0, MaxItemsPerRound);
             if (!RandomItemsPerRound) {
-                this.MinItemsPerRound = this.MaxItemsPerRound;
+                MinItemsPerRound = MaxItemsPerRound;
             }
         }
 
         public IEnumerable<Item> GetEnabledItems() {
-            if (this.EnableReverseTurnOrderItem) yield return Item.ReverseTurnOrder;
-            if (this.EnableRackChamberItem) yield return Item.RackChamber;
-            if (this.EnableExtraLifeItem) yield return Item.ExtraLife;
-            if (this.EnablePickpocketItem) yield return Item.Pickpocket;
-            if (this.EnableLifeGambleItem) yield return Item.LifeGamble;
-            if (this.EnableInvertItem) yield return Item.Invert;
-            if (this.EnableChamberCheckItem) yield return Item.ChamberCheck;
-            if (this.EnableDoubleDamageItem) yield return Item.DoubleDamage;
-            if (this.EnableSkipItem) yield return Item.Skip;
-            if (this.EnableRicochetItem) yield return Item.Ricochet;
+            if (EnableReverseTurnOrderItem) yield return Item.ReverseTurnOrder;
+            if (EnableRackChamberItem) yield return Item.RackChamber;
+            if (EnableExtraLifeItem) yield return Item.ExtraLife;
+            if (EnablePickpocketItem) yield return Item.Pickpocket;
+            if (EnableLifeGambleItem) yield return Item.LifeGamble;
+            if (EnableInvertItem) yield return Item.Invert;
+            if (EnableChamberCheckItem) yield return Item.ChamberCheck;
+            if (EnableDoubleDamageItem) yield return Item.DoubleDamage;
+            if (EnableSkipItem) yield return Item.Skip;
+            if (EnableRicochetItem) yield return Item.Ricochet;
         }
     }
 }

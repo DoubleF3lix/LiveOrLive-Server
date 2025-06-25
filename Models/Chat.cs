@@ -7,7 +7,7 @@ namespace liveorlive_server.Models {
 
         public ChatMessage AddMessage(string author, string content) {
             var newMessage = new ChatMessage(author, content);
-            this.Messages.Add(newMessage);
+            Messages.Add(newMessage);
             return newMessage;
         }
     }

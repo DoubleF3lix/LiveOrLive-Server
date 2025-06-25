@@ -7,12 +7,12 @@ namespace liveorlive_server.Models {
 
         public GameLogMessage AddMessage(string content) {
             var newMessage = new GameLogMessage(content);
-            this.Messages.Add(newMessage);
+            Messages.Add(newMessage);
             return newMessage;
         }
 
         public void Clear() {
-            this.Messages.Clear();
+            Messages.Clear();
         }
     }
 }

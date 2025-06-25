@@ -1,9 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
-using liveorlive_server.Deck;
+﻿using liveorlive_server.Deck;
 using liveorlive_server.Enums;
 using liveorlive_server.Models;
 using liveorlive_server.Models.Results;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 using Tapper;
 
 namespace liveorlive_server {
@@ -17,10 +17,6 @@ namespace liveorlive_server {
         /// The name for the lobby. May be the same as <c>Id</c>.
         /// </summary>
         public string Name { get; set; }
-        /// <summary>
-        /// Whether or not this lobby will show in the lobby selector.
-        /// </summary>
-        public bool Private => Settings.Private;
         /// <summary>
         /// Unix timestamp for lobby creation.
         /// </summary>
@@ -58,7 +54,7 @@ namespace liveorlive_server {
         /// A merging of <see cref="Players"/> and <see cref="Spectators"/>.
         /// </summary>
         [JsonIgnore]
-        public List<ConnectedClient> Clients => Players.Cast<ConnectedClient>().Union(Spectators).ToList();
+        public List<ConnectedClient> Clients => [.. Players.Cast<ConnectedClient>().Union(Spectators)];
 
         /// <summary>
         /// The turn order for this lobby.
@@ -145,6 +141,11 @@ namespace liveorlive_server {
             _gameLog.Clear();
             _itemDeck.Initialize(Players.Count);
 
+            // Filter out players who are no longer in the game, and reset those who are left
+            Players = [.. Players
+                .Where(player => player.InGame)
+                .Select(player => player.ResetDefaults())];
+
             return _turnOrderManager.TurnOrder;
         }
 
@@ -163,11 +164,7 @@ namespace liveorlive_server {
             }
 
             GameStarted = false;
-            // Filter out players who are no longer in the game, and reset those who are left
-            Players = Players
-                .Where(player => player.InGame)
-                .Select(player => player.ResetDefaults())
-                .ToList();
+            // Player resetting is done on game start
 
             return result;
         }
@@ -362,7 +359,7 @@ namespace liveorlive_server {
             } else {
                 client = GameStarted
                     ? new Spectator(username, connectionId)
-                    : new Player(Settings, username, connectionId);
+                    : new Player(username, connectionId, Settings.DefaultLives);
 
                 if (client is Player newPlayer) {
                     Players.Add(newPlayer);
@@ -371,6 +368,28 @@ namespace liveorlive_server {
                 }
             }
             return client;
+        }
+
+        public ChangePlayerToSpectatorResult ChangePlayerToSpectator(Player player) {
+            _turnOrderManager.RemovePlayer(player);
+            Players.Remove(player);
+            var newSpectator = new Spectator(player.Username, player.ConnectionId);
+            Spectators.Add(newSpectator);
+
+            return new ChangePlayerToSpectatorResult {
+                NewSpectator = newSpectator,
+                ForfeitTurn = CurrentTurn == player.Username
+            };
+        }
+
+        public ChangeSpectatorToPlayerResult ChangeSpectatorToPlayer(Spectator spectator) {
+            Spectators.Remove(spectator);
+            var newPlayer = new Player(spectator.Username, spectator.ConnectionId, Settings.DefaultLives);
+            Players.Add(newPlayer);
+
+            return new ChangeSpectatorToPlayerResult {
+                NewPlayer = newPlayer
+            };
         }
 
         /// <summary>

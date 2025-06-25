@@ -3,15 +3,15 @@ using Tapper;
 
 namespace liveorlive_server.Models {
     [TranspilationSource]
-    public class Player(Settings config, string username, string? connectionId) : ConnectedClient(username, connectionId) {
+    public class Player(string username, string? connectionId, int defaultLives) : ConnectedClient(username, connectionId) {
         // Needed to keep track of players who have left without kicking them for disconnects
         public bool InGame { get; set; } = true;
-        public int Lives { get; set; } = config.DefaultLives;
-        public List<Item> Items { get; set; } = new(config.MaxItems);
+        public int Lives { get; set; }
+        public List<Item> Items { get; set; } = [];
         public bool IsSkipped { get; set; } = false;
         public bool IsRicochet { get; set; } = false;
 
-        private readonly Settings config = config;
+        public int DefaultLives = defaultLives;
 
         /// <summary>
         /// Resets this player to defaults (clears items, resets lives, etc.).
@@ -19,8 +19,8 @@ namespace liveorlive_server.Models {
         /// <returns>Returns <c>this</c> to simplify using <c>.Select()</c> in LINQ.</returns>
         public Player ResetDefaults() {
             InGame = true;
-            Lives = config.DefaultLives;
-            Items = new(config.MaxItems);
+            Lives = DefaultLives;
+            Items = [];
             IsSkipped = false;
             IsRicochet = false;
 

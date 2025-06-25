@@ -12,7 +12,7 @@ namespace liveorlive_server {
 
         public Server() {
             // TODO remove
-            this.CreateLobby(name: "Gambling Addiction");
+            CreateLobby(name: "Gambling Addiction");
         }
 
         /// <summary>
@@ -26,7 +26,7 @@ namespace liveorlive_server {
                 return "Missing lobbyId or username";
             }
 
-            var lobby = this.Lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
+            var lobby = Lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
             if (lobby == null) {
                 return "Couldn't locate lobby";
             }
@@ -51,8 +51,8 @@ namespace liveorlive_server {
         /// <param name="name">Optional name for the lobby. Set to the lobby ID if <c>null</c>.</param>
         /// <returns>The newly created <c>Lobby</c> instance.</returns>
         public Lobby CreateLobby(Settings? settings = null, string? name = null) {
-            var newLobby = new Lobby(this.GenerateId(), settings, name);
-            this.Lobbies.Add(newLobby);
+            var newLobby = new Lobby(GenerateId(), settings, name);
+            Lobbies.Add(newLobby);
             return newLobby;
         }
 
@@ -63,7 +63,7 @@ namespace liveorlive_server {
         /// <returns>The <c>Lobby</c> instance matching the ID.</returns>
         /// <exception cref="InvalidOperationException">Thrown if the lobby couldn't be found.</exception>
         public Lobby GetLobbyById(string lobbyId) {
-            if (this.TryGetLobbyById(lobbyId, out var result)) {
+            if (TryGetLobbyById(lobbyId, out var result)) {
                 return result;
             }
             throw new InvalidOperationException();
@@ -76,7 +76,7 @@ namespace liveorlive_server {
         /// <param name="lobby">The <c>Lobby</c> instance for the matched lobby, or <c>null</c> if not found.</param>
         /// <returns>A boolean matching if the lobby could be found.</returns>
         public bool TryGetLobbyById(string? lobbyId, [NotNullWhen(true)] out Lobby? lobby) {
-            lobby = this.Lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
+            lobby = Lobbies.FirstOrDefault(lobby => lobby.Id == lobbyId);
             return lobby != null;
         }
 

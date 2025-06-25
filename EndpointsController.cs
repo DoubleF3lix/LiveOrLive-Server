@@ -14,7 +14,7 @@ namespace liveorlive_server {
         /// <returns>JSON string of lobbies list with their info, such as settings.</returns>
         [HttpGet("/lobbies")]
         public string GetLobbies() {
-            return JsonSerializer.Serialize(_server.Lobbies.Where(lobby => !lobby.Private), JSON_OPTIONS);
+            return JsonSerializer.Serialize(_server.Lobbies.Where(lobby => !lobby.Settings.Private), JSON_OPTIONS);
         }
 
         /// <summary>

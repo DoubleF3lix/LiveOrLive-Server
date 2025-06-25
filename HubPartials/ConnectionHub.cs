@@ -53,8 +53,7 @@ namespace liveorlive_server.HubPartials {
             await Clients.Caller.ConnectionSuccess();
 
             if (lobby.Host == null) {
-                lobby.Host = username;
-                await Clients.Group(lobbyId).HostChanged(null, username, "Host joined");
+                await ChangeHost(lobby, username, "Host joined");
             }
 
             await base.OnConnectedAsync();
@@ -85,9 +84,8 @@ namespace liveorlive_server.HubPartials {
 
                 // Host transfer (find first player who isn't the one who just left, otherwise null)
                 if (lobby.Host == client.Username) {
-                    lobby.Host = lobby.Clients.FirstOrDefault(p => (p is Player player && player.InGame) || p is Spectator)?.Username;
-                    // player.username is previous host
-                    await Clients.Group(lobby.Id).HostChanged(client.Username, lobby.Host, "Host disconnected");
+                    var newHost = lobby.Clients.FirstOrDefault(p => (p is Player player && player.InGame) || p is Spectator)?.Username;
+                    await ChangeHost(lobby, newHost, "Host disconnected");
                 }
 
                 await Clients.Group(lobby.Id).ClientLeft(client.Username);
@@ -126,7 +124,7 @@ namespace liveorlive_server.HubPartials {
         }
 
         public async Task SetHost(string username) {
-            var lobby = Context.GetLobby(this._server);
+            var lobby = Context.GetLobby(_server);
             if (lobby.Host != Context.GetClient(_server).Username) {
                 await Clients.Caller.ActionFailed("You must be the host to do that!");
                 return;
@@ -139,8 +137,31 @@ namespace liveorlive_server.HubPartials {
                 await Clients.Caller.ActionFailed($"Failed to transfer host: {username} is not in-game");
                 return;
             }
-            lobby.Host = username;
-            await Clients.Group(lobby.Id).HostChanged(lobby.Host, username, "Host was manually transferred");
+            await ChangeHost(lobby, username, "Host was manually transferred");
+        }
+
+        public async Task SwitchPlayerType() {
+            var lobby = Context.GetLobby(_server);
+            if (!Context.TryGetClient(_server, out var client)) {
+                return;
+            }
+
+            switch (client) {
+                // Move to players
+                case Spectator spectator:
+                    if (lobby.GameStarted) {
+                        await Clients.Caller.ActionFailed("You can only switch to a player when a game is not in progress!");
+                        return;
+                    }
+                    var newPlayerResult = lobby.ChangeSpectatorToPlayer(spectator);
+                    await Clients.Group(lobby.Id).PlayerTypeChanged(newPlayerResult.NewPlayer);
+                    break;
+                // Move to spectators
+                case Player player:
+                    var newSpectatorResult = lobby.ChangePlayerToSpectator(player);
+                    await Clients.Group(lobby.Id).PlayerTypeChanged(newSpectatorResult.NewSpectator);
+                    break;
+            }
         }
     }
 }

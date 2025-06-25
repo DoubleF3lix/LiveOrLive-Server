@@ -20,22 +20,22 @@ namespace liveorlive_server.Deck {
         /// Clears and reloads the chamber according to lobby settings. Sets <c>BlankCount</c> and <c>LiveCount</c> to the loaded counts.
         /// </summary>
         public override void Refresh() {
-            this.deck.Clear();
+            _deck.Clear();
 
             Random random = new();
-            this.BlankCount = random.Next(settings.MinBlankRounds, settings.MaxBlankRounds);
-            this.LiveCount = random.Next(settings.MinLiveRounds, settings.MaxLiveRounds);
+            BlankCount = random.Next(_settings.MinBlankRounds, _settings.MaxBlankRounds);
+            LiveCount = random.Next(_settings.MinLiveRounds, _settings.MaxLiveRounds);
 
-            for (int i = 0; i < this.BlankCount; i++)
+            for (int i = 0; i < BlankCount; i++)
             {
-                this.deck.Add(BulletType.Blank);
+                _deck.Add(BulletType.Blank);
             }
-            for (int i = 0; i < this.LiveCount; i++)
+            for (int i = 0; i < LiveCount; i++)
             {
-                this.deck.Add(BulletType.Live);
+                _deck.Add(BulletType.Live);
             }
 
-            this.Shuffle();
+            Shuffle();
         }
 
         /// <summary>
@@ -43,17 +43,17 @@ namespace liveorlive_server.Deck {
         /// </summary>
         /// <returns>The <c>BulletType</c> of the next bullet to be fired.</returns>
         public BulletType PeekChamber() {
-            return deck[^1];
+            return _deck[^1];
         }
 
         /// <summary>
         /// Inverts the chamber round, making live rounds blank and blank rounds live.
         /// </summary>
         public void InvertChamber() {
-            if (deck[^1] == BulletType.Live) {
-                deck[^1] = BulletType.Blank;
+            if (_deck[^1] == BulletType.Live) {
+                _deck[^1] = BulletType.Blank;
             } else {
-                deck[^1] = BulletType.Live;
+                _deck[^1] = BulletType.Live;
             }
         }
     }

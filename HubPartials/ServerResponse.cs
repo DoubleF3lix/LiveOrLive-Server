@@ -30,9 +30,9 @@ namespace liveorlive_server.HubPartials
         Task ConnectionFailed(string reason);
         Task ClientJoined(ConnectedClient client);
         Task ClientLeft(string username);
-        // TODO make this function and add game log message
         Task HostChanged(string? previous, string? current, string? reason);
         Task ClientKicked(string username);
+        Task PlayerTypeChanged(ConnectedClient newClient);
     }
 
     [Receiver]
