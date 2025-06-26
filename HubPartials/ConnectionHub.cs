@@ -3,6 +3,7 @@ using liveorlive_server.Extensions;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using liveorlive_server.Models;
+using liveorlive_server.Enums;
 
 namespace liveorlive_server.HubPartials {
     public partial class LiveOrLiveHub(Server server) : Hub<IHubServerResponse>, IConnectionRequest {
@@ -140,9 +141,14 @@ namespace liveorlive_server.HubPartials {
             await ChangeHost(lobby, username, "Host was manually transferred");
         }
 
-        public async Task SwitchPlayerType() {
+        public async Task ChangeClientType(ClientType clientType) {
             var lobby = Context.GetLobby(_server);
             if (!Context.TryGetClient(_server, out var client)) {
+                return;
+            }
+
+            // We already match. Could be because of a desync or malice, but it's safe to ignore.
+            if (client.ClientType == clientType) {
                 return;
             }
 
@@ -154,12 +160,12 @@ namespace liveorlive_server.HubPartials {
                         return;
                     }
                     var newPlayerResult = lobby.ChangeSpectatorToPlayer(spectator);
-                    await Clients.Group(lobby.Id).PlayerTypeChanged(newPlayerResult.NewPlayer);
+                    await Clients.Group(lobby.Id).ClientTypeChanged(newPlayerResult.NewPlayer);
                     break;
                 // Move to spectators
                 case Player player:
                     var newSpectatorResult = lobby.ChangePlayerToSpectator(player);
-                    await Clients.Group(lobby.Id).PlayerTypeChanged(newSpectatorResult.NewSpectator);
+                    await Clients.Group(lobby.Id).ClientTypeChanged(newSpectatorResult.NewSpectator);
                     break;
             }
         }

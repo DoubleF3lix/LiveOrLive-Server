@@ -6,7 +6,7 @@ namespace liveorlive_server.Models {
     public class Player(string username, string? connectionId, int defaultLives) : ConnectedClient(username, connectionId) {
         // Needed to keep track of players who have left without kicking them for disconnects
         public bool InGame { get; set; } = true;
-        public int Lives { get; set; }
+        public int Lives { get; set; } = defaultLives;
         public List<Item> Items { get; set; } = [];
         public bool IsSkipped { get; set; } = false;
         public bool IsRicochet { get; set; } = false;

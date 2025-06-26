@@ -371,7 +371,9 @@ namespace liveorlive_server {
         }
 
         public ChangePlayerToSpectatorResult ChangePlayerToSpectator(Player player) {
-            _turnOrderManager.RemovePlayer(player);
+            if (GameStarted) {
+                _turnOrderManager.RemovePlayer(player);
+            }
             Players.Remove(player);
             var newSpectator = new Spectator(player.Username, player.ConnectionId);
             Spectators.Add(newSpectator);

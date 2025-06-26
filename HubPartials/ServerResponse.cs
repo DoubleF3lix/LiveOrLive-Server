@@ -32,7 +32,7 @@ namespace liveorlive_server.HubPartials
         Task ClientLeft(string username);
         Task HostChanged(string? previous, string? current, string? reason);
         Task ClientKicked(string username);
-        Task PlayerTypeChanged(ConnectedClient newClient);
+        Task ClientTypeChanged(ConnectedClient newClient);
     }
 
     [Receiver]

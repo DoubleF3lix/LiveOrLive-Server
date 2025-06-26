@@ -20,7 +20,7 @@ namespace liveorlive_server.HubPartials
     public interface IConnectionRequest {
         Task SetHost(string username);
         Task KickPlayer(string username);
-        Task SwitchPlayerType();
+        Task ChangeClientType(ClientType clientType);
     }
 
     [Hub]

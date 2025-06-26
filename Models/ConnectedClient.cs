@@ -1,26 +1,24 @@
-﻿using System.Text.Json.Serialization;
+﻿using liveorlive_server.Enums;
+using System.Text.Json.Serialization;
 using Tapper;
 
 namespace liveorlive_server.Models {
     [TranspilationSource]
-    public class ConnectedClient(string username, string? connectionId) {
+    public abstract class ConnectedClient(string username, string? connectionId) {
         public string Username { get; set; } = username;
         [JsonIgnore]
         public string? ConnectionId { get; set; } = connectionId;
 
-        public readonly long joinTime = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
+        public long JoinTime { get; } = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
+        public ClientType ClientType => Enum.TryParse<ClientType>(GetType().Name, true, out var result) ? result : default;
 
         public override bool Equals(object? obj) {
-            return obj is ConnectedClient other && Equals(other);
-        }
-
-        public bool Equals(ConnectedClient client) {
-            return Username == client.Username;
+            return obj is ConnectedClient other && Username == other.Username;
         }
 
         // Stop VS warnings since we override Equals()
         public override int GetHashCode() {
-            return HashCode.Combine(Username, ConnectionId ?? "", joinTime);
+            return HashCode.Combine(Username, ConnectionId ?? "", JoinTime);
         }
     }
 }
