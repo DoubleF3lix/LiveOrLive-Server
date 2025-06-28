@@ -38,7 +38,7 @@ namespace liveorlive_server.HubPartials
     [Receiver]
     public interface IBaseGameResponse {
         Task GameStarted(List<string> turnOrder);
-        Task GameEnded(string? winner);
+        Task GameEnded(string? winner, List<string> purgedPlayers);
         Task NewRoundStarted(NewRoundResult result);
         Task TurnStarted(string username);
         Task TurnEnded(string username);

@@ -91,12 +91,11 @@ namespace liveorlive_server.HubPartials {
 
                 await Clients.Group(lobby.Id).ClientLeft(client.Username);
                 if (client is Player forfeitingPlayer) {
-                    if (forfeitingPlayer.Username == lobby.CurrentTurn) {
-                        await ForfeitTurn(lobby, forfeitingPlayer);
-                    }
                     // Check if the game is over when someone leaves (only for a player though, we don't care about spectators)
                     if (lobby.GameStarted) {
                         await EndGameConditional(lobby);
+                    } else if (forfeitingPlayer.Username == lobby.CurrentTurn) {
+                        await ForfeitTurn(lobby, forfeitingPlayer);
                     }
                 }
             }

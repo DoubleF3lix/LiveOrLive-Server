@@ -36,7 +36,7 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby to end the game of.</param>
         private async Task EndGame(Lobby lobby) {
             var result = lobby.EndGame();
-            await Clients.Group(lobby.Id).GameEnded(result.Winner);
+            await Clients.Group(lobby.Id).GameEnded(result.Winner, result.PurgedPlayers);
             await AddGameLogMessage(lobby, result.Winner != null ? 
                 $"The game has ended. The winner is {result.Winner}!" : 
                 "The game has ended. No winner would be determined."
@@ -110,7 +110,7 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby to check the end game condition of.</param>
         /// <returns>Whether or not the conditions were met and the game was ended.</returns>
         private async Task<bool> EndGameConditional(Lobby lobby) {
-            if (lobby.Players.Count(player => player.Lives > 0) <= 1) {
+            if (lobby.Players.Count(player => player.Lives > 0 && player.InGame) <= 1) {
                 await EndGame(lobby);
                 return true;
             }

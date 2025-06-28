@@ -141,11 +141,6 @@ namespace liveorlive_server {
             _gameLog.Clear();
             _itemDeck.Initialize(Players.Count);
 
-            // Filter out players who are no longer in the game, and reset those who are left
-            Players = [.. Players
-                .Where(player => player.InGame)
-                .Select(player => player.ResetDefaults())];
-
             return _turnOrderManager.TurnOrder;
         }
 
@@ -154,19 +149,27 @@ namespace liveorlive_server {
         /// </summary>
         /// <returns>See <see cref="EndGameResult"/>.</returns>
         public EndGameResult EndGame() {
-            var result = new EndGameResult();
+            string? winner;
 
             // If the game ended because people left, there is no winner
             if (Players.Count(player => player.InGame) <= 1) {
-                result.Winner = null;
+                winner = null;
             } else {
-                result.Winner = Players.FirstOrDefault(player => player.Lives >= 1)?.Username ?? "nobody";
+                winner = Players.FirstOrDefault(player => player.Lives >= 1)?.Username ?? "nobody";
             }
 
             GameStarted = false;
-            // Player resetting is done on game start
+            // Filter out players who are no longer in the game, and reset those who are left
+            // Need to update here so the pre-game can display accurate information about player counts
+            var purgedPlayers = Players.Where(player => !player.InGame).Select(player => player.Username).ToList();
+            Players = [.. Players
+                .Where(player => player.InGame)
+                .Select(player => player.ResetDefaults())];
 
-            return result;
+            return new EndGameResult {
+                Winner = winner,
+                PurgedPlayers = purgedPlayers
+            };
         }
 
         /// <summary>
