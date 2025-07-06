@@ -172,6 +172,9 @@ namespace liveorlive_server.HubPartials {
                 case Player player:
                     var newSpectatorResult = lobby.ChangePlayerToSpectator(player);
                     await Clients.Group(lobby.Id).ClientTypeChanged(newSpectatorResult.NewSpectator);
+                    if (lobby.GameStarted) {
+                        await EndGameConditional(lobby);
+                    }
                     break;
             }
         }
