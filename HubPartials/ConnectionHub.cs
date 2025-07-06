@@ -11,8 +11,6 @@ namespace liveorlive_server.HubPartials {
         private readonly Server _server = server;
 
         public override async Task OnConnectedAsync() {
-            await Console.Out.WriteLineAsync($"Connected: {Context.ConnectionId}");
-
             // Make sure we have gameId, otherwise reject the connection
             var context = Context.GetHttpContext();
             if (context == null) {
@@ -23,6 +21,9 @@ namespace liveorlive_server.HubPartials {
 
             var lobbyId = context.GetStringQueryParam("lobbyId");
             var username = context.GetStringQueryParam("username");
+            if (!Enum.TryParse(context.GetStringQueryParam("clientType"), true, out ClientType clientType)) {
+                clientType = ClientType.Player;
+            }
 
             var errorMessage = _server.ValidateLobbyConnectionInfo(lobbyId, username);
             if (errorMessage != null) {
@@ -38,6 +39,13 @@ namespace liveorlive_server.HubPartials {
             Debug.Assert(username != null);
 
             var lobby = _server.GetLobbyById(lobbyId);
+
+            if (clientType == ClientType.Player && lobby.Players.Count >= lobby.Settings.MaxPlayers) {
+                await Clients.Caller.ConnectionFailed("Lobby is full");
+                await Task.Delay(50);
+                Context.Abort();
+                return;
+            }
 
             // Store the lobbyId on the connection, and add this connection to the group
             Context.SetLobbyId(lobbyId);
@@ -63,7 +71,6 @@ namespace liveorlive_server.HubPartials {
         public override async Task OnDisconnectedAsync(Exception? exception) {
             // Removal from group is handled automatically
             // https://learn.microsoft.com/en-us/aspnet/core/signalr/hubs?view=aspnetcore-9.0#handle-events-for-a-connection
-            await Console.Out.WriteLineAsync($"Disconnected: {Context.ConnectionId}");
             // Client may not exist if we got here on connection failure
             if (Context.TryGetClient(_server, out var client)) {
                 // Lobby is guarunteed to exist here

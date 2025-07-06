@@ -1,7 +1,6 @@
 ﻿using liveorlive_server.Models;
 using Microsoft.AspNetCore.SignalR;
 using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
 
 namespace liveorlive_server.Extensions {
     public static class HubCallerContextExtension {

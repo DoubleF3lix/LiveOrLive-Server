@@ -8,7 +8,7 @@ namespace liveorlive_server.Models {
         // Private = True will hide game from lobby selector
         public bool Private { get; set; } = false;
         // How many players can be in a game. No cap on spectators.
-        public int MaxPlayers { get; set; } = 8; // TODO
+        public int MaxPlayers { get; set; } = 8;
 
         // Chamber (self-explanatory)
         public int MinBlankRounds { get; set; } = 1;
@@ -109,7 +109,7 @@ namespace liveorlive_server.Models {
          * Sudden Death can be disabled with SuddenDeathActivationPoint = 0, and this value is useless if AllowPlayerRevival = false
          */
         public void Normalize() {
-            MaxPlayers = Math.Clamp(MaxPlayers, 2, 100);
+            MaxPlayers = Math.Clamp(MaxPlayers, 2, 64);
 
             // Min <= Max = [1..12]
             MaxBlankRounds = Math.Clamp(MaxBlankRounds, 1, 12);
@@ -117,11 +117,10 @@ namespace liveorlive_server.Models {
             MinBlankRounds = Math.Clamp(MinBlankRounds, 1, MaxBlankRounds);
             MinLiveRounds = Math.Clamp(MinLiveRounds, 1, MaxLiveRounds);
 
-            MaxLives = Math.Clamp(MaxLives, 1, 100);
+            MaxLives = Math.Clamp(MaxLives, 1, 32);
             DefaultLives = Math.Clamp(DefaultLives, 0, MaxLives);
 
-            // MinPR <= MaxPR <= Max = [1..100]
-            MaxItems = Math.Clamp(MaxItems, 0, 100);
+            MaxItems = Math.Clamp(MaxItems, 0, 64);
             MaxItemsPerRound = Math.Clamp(MaxItemsPerRound, 0, MaxItems);
             MinItemsPerRound = Math.Clamp(MinItemsPerRound, 0, MaxItemsPerRound);
             if (!RandomItemsPerRound) {

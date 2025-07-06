@@ -33,6 +33,7 @@ namespace liveorlive_server {
 
             // Config is default initialized by auto-binding magic if it isn't set
             // And if any properties are missing, they get their default values too
+            request.Settings.Normalize();
             var newLobby = _server.CreateLobby(request.Settings, request.LobbyName);
 
             return Results.Ok(new CreateLobbyResponse { LobbyId = newLobby.Id });
