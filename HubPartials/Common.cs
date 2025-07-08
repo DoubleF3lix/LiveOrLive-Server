@@ -17,7 +17,7 @@ namespace liveorlive_server.HubPartials {
             var oldHost = lobby.Host;
             lobby.Host = newHost;
             await Clients.Group(lobby.Id).HostChanged(oldHost, newHost, reason);
-            await AddGameLogMessage(lobby, $"{newHost} is now the host. Reason: {reason}.");
+            await AddGameLogMessage(lobby, $"{newHost ?? "No one"} is now the host. Reason: {reason}.");
         }
 
         /// <summary>
@@ -123,6 +123,7 @@ namespace liveorlive_server.HubPartials {
         /// <param name="lobby">The lobby to add the game log message to.</param>
         /// <param name="message">The message to add to the game log.</param>
         private async Task AddGameLogMessage(Lobby lobby, string message) {
+            Console.WriteLine(message);
             var gameLogMessage = lobby.AddGameLogMessage(message);
             await Clients.Group(lobby.Id).GameLogUpdate(gameLogMessage);
         }
@@ -489,6 +490,12 @@ namespace liveorlive_server.HubPartials {
             return true;
         }
 
+        /// <summary>
+        /// Shoot a player, given a target and shooter.
+        /// </summary>
+        /// <param name="lobby">The lobby the players belong to.</param>
+        /// <param name="shooter">The <see cref="Player"/> doing the shooting.</param>
+        /// <param name="target">The <see cref="Player"/> who was shot. May be the same as <paramref name="shooter"/>.</param>
         private async Task ShootPlayerActual(Lobby lobby, Player shooter, Player target) {
             var result = lobby.ShootPlayer(shooter, target);
 
@@ -500,8 +507,13 @@ namespace liveorlive_server.HubPartials {
             await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
         }
 
+        /// <summary>
+        /// Makes a player forfeit their turn (does no checks for turn order), making them shoot themselves exactly once.
+        /// </summary>
+        /// <param name="lobby">The player of the player forfeiting their turn.</param>
+        /// <param name="player">The <see cref="Player"/> forfeiting their turn.</param>
         private async Task ForfeitTurn(Lobby lobby, Player player) {
-            // Make the player shoot themselves
+            await AddGameLogMessage(lobby, $"{player.Username} has forfeited their turn.");
             await ShootPlayerActual(lobby, player, player);
             await NewTurn(lobby);
         }

@@ -54,16 +54,17 @@ namespace liveorlive_server.HubPartials {
             // ValidateLobbyConnectionInfo ensures that there is no in-game player in the lobby with this username
             // So either they exist and we're good to take them, or they don't and we make a new one
             // This handles assigning an existing player or creating a new one
-            var player = lobby.AddClient(Context.ConnectionId, username);
+            var client = lobby.AddClient(Context.ConnectionId, username);
 
             // INFORM THE MEN. A NEW client HAS ARRIVED
             _connectionContexts[Context.ConnectionId] = Context;
-            await Clients.OthersInGroup(lobbyId).ClientJoined(player);
+            await Clients.OthersInGroup(lobbyId).ClientJoined(client);
             await Clients.Caller.ConnectionSuccess();
 
             if (lobby.Host == null) {
                 await ChangeHost(lobby, username, "Host joined");
             }
+            await AddGameLogMessage(lobby, $"{client.Username} has joined the game (as a {client.ClientType.ToString().ToLower()}).");
 
             await base.OnConnectedAsync();
         }
@@ -105,6 +106,7 @@ namespace liveorlive_server.HubPartials {
                         await ForfeitTurn(lobby, forfeitingPlayer);
                     }
                 }
+                await AddGameLogMessage(lobby, $"{client.Username} has left the game (as a {client.ClientType.ToString().ToLower()}).");
             }
             _connectionContexts.Remove(Context.ConnectionId, out _);
             await base.OnDisconnectedAsync(exception);
