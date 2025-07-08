@@ -208,6 +208,11 @@ namespace liveorlive_server.HubPartials {
                 return false;
             }
 
+            if (targetPlayer.Lives >= lobby.Settings.MaxLives && !lobby.Settings.AllowExtraLifeWhenFull) {
+                await Clients.Caller.ActionFailed($"{targetPlayer.Username} already has the max amount of lives!");
+                return false;
+            }
+
             lobby.GiveExtraLife(targetPlayer);
             await Clients.Group(lobby.Id).ExtraLifeItemUsed(target, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? " stole an item and" : "")} gave {(user == targetPlayer ? "themselves" : targetPlayer.Username)} an extra life.");

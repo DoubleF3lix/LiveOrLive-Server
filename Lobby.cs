@@ -276,7 +276,7 @@ namespace liveorlive_server {
         /// </summary>
         /// <param name="player">The player to give a life to.</param>
         public void GiveExtraLife(Player player) {
-            player.Lives += 1;
+            player.Lives = Math.Min(player.Lives + 1, Settings.MaxLives);
         }
 
         /// <summary>
@@ -292,7 +292,9 @@ namespace liveorlive_server {
                 options.AddRange(Enumerable.Repeat(weights.Key, weights.Value));
             }
             var roll = options[random.Next(options.Count)];
-            player.Lives += roll;
+            player.Lives = Settings.AllowLifeGambleExceedMax 
+                ? player.Lives + roll 
+                : Math.Min(player.Lives + roll, Settings.MaxLives);
 
             return new LifeGambleResult {
                 LifeChange = roll
