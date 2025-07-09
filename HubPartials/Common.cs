@@ -179,6 +179,8 @@ namespace liveorlive_server.HubPartials {
             await Clients.Group(lobby.Id).RackChamberItemUsed(result.BulletType, itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} racked the chamber, ejecting a {(result.BulletType == BulletType.Live ? "live" : "blank")} round.");
 
+            await OnActionEnd(lobby, false);
+
             return true;
         }
 

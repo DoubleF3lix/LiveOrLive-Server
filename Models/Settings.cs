@@ -37,6 +37,8 @@ namespace liveorlive_server.Models {
         // This supercedes AllowLootingDead
         public bool LootItemsOnKill { get; set; } = false; // TODO
         // The maximum number of items that can be looted on kill
+        // TODO make select loot items menu (have item list displayed like item use, but have a number input next to each with a max selection amount) and display on kill according to this setting
+        // Need to add packet to transfer items on loot
         public int MaxLootItemsOnKill { get; set; } = 2; // TODO
         // Allows the above to exceed MaxItems
         public bool AllowLootItemsExceedMax { get; set; } = false; // TODO

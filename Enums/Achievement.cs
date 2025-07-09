@@ -4,11 +4,11 @@ namespace liveorlive_server.Enums {
     public enum Achievement {
         [Description("Skip yourself by killing a skipped player twice in a game")]
         Whoops,
-        [Description("Use Adrenaline 3 times in a game and live (in a row)")]
+        [Description("Use Life Gamble 3 times in a game and live (in a row)")]
         HighRoller,
-        [Description("Use Adrenaline 3 times in a game and lose (in a row)")]
+        [Description("Use Life Gamble 3 times in a game and lose (in a row)")]
         LosingToYourself,
-        [Description("Use Adrenaline 4 turns in a row")]
+        [Description("Use Life Gamble 4 turns in a row")]
         Addiction,
         [Description("Have 7+ lives at once")]
         Overclock,
@@ -18,6 +18,8 @@ namespace liveorlive_server.Enums {
         GuardianAngel,
         [Description("After being revived, win a game")]
         ZeroToHero,
+        [Description("Get a Second Wind twice in a row")]
+        TripleWind,
         [Description("Give someone a life and immediately shoot them")]
         MockTrial,
         [Description("Steal someone's life and use it on yourself when you already have max lives")]
@@ -64,7 +66,7 @@ namespace liveorlive_server.Enums {
         DeadManWalking,
         [Description("Get revived and eliminate the person who killed you")]
         Phoenix,
-        [Description("Use Adrenaline with a single life left and survive")]
+        [Description("Use Life Gamble with a single life left and survive")]
         CourtingDeath,
         [Description("Have 3 of the same item at once")]
         Hoarder,
@@ -100,7 +102,7 @@ namespace liveorlive_server.Enums {
         PerfectStorm,
         [Description("Invert a round and eliminate someone with it")]
         Magician,
-        [Description("Steal Adrenaline from someone and lose")]
+        [Description("Steal Life Gamble from someone and lose")]
         ThreeSidedCoin,
         [Description("Steal someone's skip and use it on them")]
         Opportunist, // "Opportunity", but said in a high pitched opera-like voice
@@ -108,13 +110,13 @@ namespace liveorlive_server.Enums {
         EscapeHatch,
         [Description("Reverse the turn order and shoot the person who was supposed to go next")]
         BoomerangBullet,
-        [Description("Steal an Adrenaline from someone with only one life left")]
+        [Description("Steal an Life Gamble from someone with only one life left")]
         Rehabbed,
         [Description("Reverse the turn order twice in one turn")]
         PeakEfficiency,
         [Description("Play through a complete round by yourself")]
         NoTimeToLive,
-        [Description("Die by Adrenaline twice in one game")]
+        [Description("Die by Life Gamble twice in one game")]
         TheCharity,
         [Description("Don't take a turn for 3 rounds")]
         NotYourLuckyDay,
