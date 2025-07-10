@@ -54,6 +54,10 @@ namespace liveorlive_server.Models {
         public bool EnableDoubleDamageItem { get; set; } = true;
         public bool EnableSkipItem { get; set; } = true;
         public bool EnableRicochetItem { get; set; } = false;
+        public bool EnableTrenchcoatItem { get; set; } = false; // TODO (add functions and packets for usage)
+        public bool EnableMisfireItem { get; set; } = false; // TODO implement
+        public bool EnableHypnotizeItem { get; set; } = false; // TODO implement
+        public bool EnablePocketPistolItem { get; set; } = false; // TODO implement, configurable odds
 
         // Gameplay
         // Allows players to use Extra Lives on others. Same rules for using it on yourself apply.
@@ -73,7 +77,7 @@ namespace liveorlive_server.Models {
         // Whether or not a counter should be displayed for how many ricochets are active (essentially useless if the above is true)
         public bool ShowRicochetsCounter { get; set; } = true; // TODO
         // Stops reverse turn order items from being dealt with only two players, and turns any existing ones into Invert
-        public bool DisableDealReverseWhenTwoPlayers { get; set; } = true; // TODO
+        public bool DisableDealReverseAndRicochetWhenTwoPlayers { get; set; } = true; // TODO
 
         // Whether or not a skip is discarded from all players at the end of a round
         public bool LoseSkipAfterRound { get; set; } = true; // TODO

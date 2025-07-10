@@ -10,8 +10,8 @@ namespace liveorlive_server.Enums {
         LosingToYourself,
         [Description("Use Life Gamble 4 turns in a row")]
         Addiction,
-        [Description("Have 7+ lives at once")]
-        Overclock,
+        [Description("Have 9+ lives at once")]
+        Cat, // AKA Overclock
         [Description("Give someone else a life when you only have one")]
         Martyr,
         [Description("Revive 3 people in a game")]
@@ -22,7 +22,7 @@ namespace liveorlive_server.Enums {
         TripleWind,
         [Description("Give someone a life and immediately shoot them")]
         MockTrial,
-        [Description("Steal someone's life and use it on yourself when you already have max lives")]
+        [Description("Steal someone's Extra Life and use it on yourself when you already have max lives")]
         CruelAndUnusual,
         [Description("Shoot yourself with 50/50 odds and survive three times in a game")]
         FiftyFiftyFifty,
