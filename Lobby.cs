@@ -229,14 +229,16 @@ namespace liveorlive_server {
         public ShootPlayerResult ShootPlayer(Player shooter, Player target) {
             var bulletType = _ammoDeck.Pop();
             var damage = (int)bulletType * (DoubleDamageEnabled ? 2 : 1);
-            target.Lives -= damage;
+            AddLives(target, -damage);
             // Always reset anyways, no point in checking
             DoubleDamageEnabled = false;
 
             return new ShootPlayerResult {
                 BulletFired = bulletType,
                 Damage = damage,
-                ShotSelf = shooter == target
+                ShotSelf = shooter == target,
+                Killed = target.Lives <= 0,
+                Eliminated = target.Eliminated
             };
         }
 
@@ -272,11 +274,31 @@ namespace liveorlive_server {
         }
 
         /// <summary>
-        /// Gives an extra life to the specified player.
+        /// Add lives to a player, taking into account settings
+        /// </summary>
+        /// <param name="player">The player to add lives to.</param>
+        /// <param name="add">The amount of lives to add. Can be negative.</param>
+        /// <param name="allowExceedMax">Whether or not <see cref="Settings.MaxLives"/> should be bypassed. Used for <see cref="Settings.AllowLifeGambleExceedMax"/>.</param>
+        public void AddLives(Player player, int add, bool allowExceedMax = false) {
+            player.Lives = Math.Clamp(player.Lives + add, 0, allowExceedMax ? int.MaxValue : Settings.MaxLives);
+
+            // This is also used for players getting shot or life gambling, so we need to check for dead status.
+            if (player.Lives <= 0) {
+                if (player.ReviveCount >= Settings.MaxPlayerRevives) {
+                    player.Eliminated = true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gives an extra life to the specified player. Does not go past <see cref="Settings.MaxLives"/>.
         /// </summary>
         /// <param name="player">The player to give a life to.</param>
         public void GiveExtraLife(Player player) {
-            player.Lives = Math.Min(player.Lives + 1, Settings.MaxLives);
+            if (player.Lives <= 0) {
+                player.ReviveCount++;
+            }
+            AddLives(player, 1);
         }
 
         /// <summary>
@@ -292,12 +314,12 @@ namespace liveorlive_server {
                 options.AddRange(Enumerable.Repeat(weights.Key, weights.Value));
             }
             var roll = options[random.Next(options.Count)];
-            player.Lives = Settings.AllowLifeGambleExceedMax 
-                ? player.Lives + roll 
-                : Math.Min(player.Lives + roll, Settings.MaxLives);
+            AddLives(player, roll, Settings.AllowLifeGambleExceedMax);
 
             return new LifeGambleResult {
-                LifeChange = roll
+                LifeChange = roll,
+                Dead = player.Lives <= 0,
+                Eliminated = player.Eliminated
             };
         }
 

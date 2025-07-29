@@ -16,6 +16,7 @@ namespace liveorlive_server.Models {
         public int MaxBlankRounds { get; set; } = 4;
         public int MaxLiveRounds { get; set; } = 4;
         // Whether or not the client should show how many rounds of each type have been fired
+        // Can't really stop modified clients from tracking this since it's trivial, so we'll keep it completely client side
         public bool ShowFiredRoundsTally { get; set; } = false; // TODO
 
         // Lives
@@ -60,10 +61,12 @@ namespace liveorlive_server.Models {
         public bool EnablePocketPistolItem { get; set; } = false; // TODO implement, configurable odds
 
         // Gameplay
+        public bool AnnounceChamberCheckResults { get; set; } = true;
         // Allows players to use Extra Lives on others. Same rules for using it on yourself apply.
-        public bool AllowLifeDonation { get; set; } = true; // TODO
+        public bool AllowLifeDonation { get; set; } = true;
         // Allows players to come back. If false, once a player hits 0 lives, they're out for good
-        public bool AllowPlayerRevival { get; set; } = true; // TODO
+        // -1 is infinite, 0 to disable
+        public int MaxPlayerRevives { get; set; } = -1;
         // Stacking is linear, not multiplicative, so 2 2x items is 3 damage, not 4
         public bool AllowDoubleDamageStacking { get; set; } = false; // TODO
         // If false, players are immune to skips if they lost their last turn
@@ -132,6 +135,10 @@ namespace liveorlive_server.Models {
             if (!RandomItemsPerRound) {
                 MinItemsPerRound = MaxItemsPerRound;
             }
+
+            if (MaxPlayerRevives < 0) {
+                MaxPlayerRevives = int.MaxValue;
+            }
         }
 
         public IEnumerable<Item> GetEnabledItems() {
@@ -145,6 +152,10 @@ namespace liveorlive_server.Models {
             if (EnableDoubleDamageItem) yield return Item.DoubleDamage;
             if (EnableSkipItem) yield return Item.Skip;
             if (EnableRicochetItem) yield return Item.Ricochet;
+            if (EnableTrenchcoatItem) yield return Item.Trenchcoat; 
+            if (EnableMisfireItem) yield return Item.Misfire;
+            if (EnableHypnotizeItem) yield return Item.Hypnotize;
+            if (EnablePocketPistolItem) yield return Item.PocketPistol;
         }
     }
 }

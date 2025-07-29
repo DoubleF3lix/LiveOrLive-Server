@@ -62,7 +62,8 @@ namespace liveorlive_server.HubPartials
         Task PickpocketItemUsed(string target, Item item, string? itemTarget, string itemSourceUsername);
         Task LifeGambleItemUsed(int lifeChange, string itemSourceUsername);
         Task InvertItemUsed(string itemSourceUsername);
-        Task ChamberCheckItemUsed(BulletType bulletType, string itemSourceUsername);
+        // bulletType can be null if we want to hide the bullet type from others
+        Task ChamberCheckItemUsed(BulletType? bulletType, string itemSourceUsername);
         Task DoubleDamageItemUsed(string itemSourceUsername);
         Task SkipItemUsed(string target, string itemSourceUsername);
         Task RicochetItemUsed(string? target, string itemSourceUsername);

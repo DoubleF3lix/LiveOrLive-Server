@@ -203,6 +203,16 @@ namespace liveorlive_server.HubPartials {
                 return false;
             }
 
+            if (!lobby.Settings.AllowLifeDonation && user.Username != target) {
+                await Clients.Caller.ActionFailed("You can't donate Extra Lives!");
+                return false;
+            }
+
+            if (targetPlayer.Eliminated) {
+                await Clients.Caller.ActionFailed($"{target} is eliminated and cannot be revived!");
+                return false;
+            }
+
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.ExtraLife)) {
@@ -321,6 +331,12 @@ namespace liveorlive_server.HubPartials {
             // Grammar is *still* important, kids
             await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $" from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(Math.Abs(result.LifeChange) == 1 ? "life" : "lives")}.");
 
+            if (result.Eliminated) {
+                await AddGameLogMessage(lobby, $"{user.Username} has been eliminated.");
+            } else if (result.Dead) {
+                await AddGameLogMessage(lobby, $"{user.Username} is dead.");
+            }
+
             // Need to check if we eliminated ourselves (whoops!)
             await OnActionEnd(lobby, false);
 
@@ -375,8 +391,13 @@ namespace liveorlive_server.HubPartials {
             }
 
             var result = lobby.PeekChamber();
-            await Clients.Group(lobby.Id).ChamberCheckItemUsed(result.ChamberRoundType, itemSource.Username);
-            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} peeked the chamber. It's a {result.ChamberRoundType.ToString().ToLower()} round!");
+            if (lobby.Settings.AnnounceChamberCheckResults) {
+                await Clients.Group(lobby.Id).ChamberCheckItemUsed(result.ChamberRoundType, itemSource.Username);
+            } else {
+                await Clients.Caller.ChamberCheckItemUsed(result.ChamberRoundType, itemSource.Username);
+                await Clients.OthersInGroup(lobby.Id).ChamberCheckItemUsed(null, itemSource.Username);
+            }
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} peeked the chamber." + (lobby.Settings.AnnounceChamberCheckResults ? $"It's a {result.ChamberRoundType.ToString().ToLower()} round!" : ""));
 
             return true;
         }
@@ -509,7 +530,15 @@ namespace liveorlive_server.HubPartials {
             // Be verbose about who shot who (even if it's themselves)
             await Clients.Group(lobby.Id).PlayerShotAt(target.Username, result.BulletFired, result.Damage);
 
-            await AddGameLogMessage(lobby, $"{shooter.Username} shot {(result.ShotSelf ? "themselves" : target.Username)} with a {result.BulletFired.ToFriendlyString()} round{(result.BulletFired == BulletType.Live ? $" for {result.Damage} damage" : "")}.");
+            // Can't eliminate/kill with a blank round... hopefully
+            if (result.Eliminated) {
+                await AddGameLogMessage(lobby, $"{shooter.Username} shot, killed, and eliminated {(result.ShotSelf ? "themselves" : target.Username)} with a live round for {result.Damage} damage");
+            } else if (result.Killed) {
+                await AddGameLogMessage(lobby, $"{shooter.Username} shot and killed {(result.ShotSelf ? "themselves" : target.Username)} with a live round for {result.Damage} damage.");
+            } else {
+                await AddGameLogMessage(lobby, $"{shooter.Username} shot {(result.ShotSelf ? "themselves" : target.Username)} with a {result.BulletFired.ToFriendlyString()} round{(result.BulletFired == BulletType.Live ? $" for {result.Damage} damage" : "")}.");
+            }
+
             // It's a turn ending action if it was not a blank round fired at themselves
             await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
         }

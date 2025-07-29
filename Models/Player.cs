@@ -10,19 +10,23 @@ namespace liveorlive_server.Models {
         public List<Item> Items { get; set; } = [];
         public bool IsSkipped { get; set; } = false;
         public bool IsRicochet { get; set; } = false;
+        public int ReviveCount { get; set; } = 0;
+        public bool Eliminated { get; set; } = false;
 
-        public int DefaultLives = defaultLives;
+        private readonly int _defaultLives = defaultLives;
 
         /// <summary>
         /// Resets this player to defaults (clears items, resets lives, etc.).
         /// </summary>
-        /// <returns>Returns <c>this</c> to simplify using <c>.Select()</c> in LINQ.</returns>
+        /// <returns>Returns this instance, to optionally simplify using <c>.Select()</c> in LINQ.</returns>
         public Player ResetDefaults() {
             InGame = true;
-            Lives = DefaultLives;
+            Lives = _defaultLives;
             Items = [];
             IsSkipped = false;
             IsRicochet = false;
+            ReviveCount = 0;
+            Eliminated = false;
 
             return this;
         }
