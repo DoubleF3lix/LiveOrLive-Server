@@ -1,4 +1,4 @@
-﻿namespace liveorlive_server.Models.Results {
+﻿namespace LiveOrLiveServer.Models.Results {
     public class ChangePlayerToSpectatorResult {
         public required Spectator NewSpectator { get; set; }
         public bool ForfeitTurn { get; set; } = false;

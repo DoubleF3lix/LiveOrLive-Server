@@ -1,4 +1,4 @@
-﻿namespace liveorlive_server.Models {
+﻿namespace LiveOrLiveServer.Models {
     public class CreateLobbyRequest {
         public required string Username {  get; set; }
         public string? LobbyName { get; set; }

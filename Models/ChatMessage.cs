@@ -1,6 +1,6 @@
 ﻿using Tapper;
 
-namespace liveorlive_server.Models {
+namespace LiveOrLiveServer.Models {
     [TranspilationSource]
     public class ChatMessage(string author, string message) {
         public Guid Id { get; set; } = Guid.NewGuid();

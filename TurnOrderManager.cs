@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Models;
+﻿using LiveOrLiveServer.Models;
 using System.Diagnostics.CodeAnalysis;
 
-namespace liveorlive_server {
+namespace LiveOrLiveServer {
     /// <summary>
     /// Manager for the turn order. Must call <c>Advance</c> to initialize the turn order before calling <c>GetPlayerForCurrentTurn</c>.
     /// </summary>

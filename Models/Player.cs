@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Enums;
+﻿using LiveOrLiveServer.Enums;
 using Tapper;
 
-namespace liveorlive_server.Models {
+namespace LiveOrLiveServer.Models {
     [TranspilationSource]
     public class Player(string username, string? connectionId, int defaultLives) : ConnectedClient(username, connectionId) {
         // Needed to keep track of players who have left without kicking them for disconnects

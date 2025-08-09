@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Enums;
+﻿using LiveOrLiveServer.Enums;
 using Tapper;
 
-namespace liveorlive_server.Models.Results {
+namespace LiveOrLiveServer.Models.Results {
     [TranspilationSource]
     public class NewRoundResult {
         public int BlankRounds { get; set; }

@@ -1,9 +1,9 @@
-﻿using liveorlive_server.Enums;
-using liveorlive_server.Extensions;
-using liveorlive_server.Models;
+﻿using LiveOrLiveServer.Enums;
+using LiveOrLiveServer.Extensions;
+using LiveOrLiveServer.Models;
 using Microsoft.AspNetCore.SignalR;
 
-namespace liveorlive_server.HubPartials {
+namespace LiveOrLiveServer.HubPartials {
     public partial class LiveOrLiveHub : Hub<IHubServerResponse>, IBaseGameRequest {
         public async Task StartGame() {
             var lobby = Context.GetLobby(_server);

@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Enums;
-using liveorlive_server.Models;
+﻿using LiveOrLiveServer.Enums;
+using LiveOrLiveServer.Models;
 
-namespace liveorlive_server.Deck {
+namespace LiveOrLiveServer.Deck {
     /// <summary>
     /// Represents the chamber, filled with live or blank rounds.
     /// </summary>

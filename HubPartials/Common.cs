@@ -1,9 +1,9 @@
-﻿using liveorlive_server.Enums;
-using liveorlive_server.Models;
-using liveorlive_server.Models.Results;
+﻿using LiveOrLiveServer.Enums;
+using LiveOrLiveServer.Models;
+using LiveOrLiveServer.Models.Results;
 using Microsoft.AspNetCore.SignalR;
 
-namespace liveorlive_server.HubPartials {
+namespace LiveOrLiveServer.HubPartials {
     // Wraps methods of a lobby to also handle outgoing packets to clients and game log messages.
     // The goal is to keep the hub logic and the game logic isolated, with this class providing methods that interface between the two.
     public partial class LiveOrLiveHub : Hub<IHubServerResponse> {

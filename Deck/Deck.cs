@@ -1,6 +1,6 @@
-﻿using liveorlive_server.Models;
+﻿using LiveOrLiveServer.Models;
 
-namespace liveorlive_server.Deck {
+namespace LiveOrLiveServer.Deck {
     /// <summary>
     /// Abstract class to implement a deck, of which items can be loaded in any order, shuffled, and popped from the end.
     /// </summary>

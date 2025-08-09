@@ -1,4 +1,4 @@
-﻿namespace liveorlive_server {
+﻿namespace LiveOrLiveServer {
     public class Program {
         public static async Task Main() {
             var app = new App();

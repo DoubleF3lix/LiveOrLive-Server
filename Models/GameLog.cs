@@ -1,6 +1,6 @@
 ﻿using Tapper;
 
-namespace liveorlive_server.Models {
+namespace LiveOrLiveServer.Models {
     [TranspilationSource]
     public class GameLog {
         public List<GameLogMessage> Messages { get; } = [];

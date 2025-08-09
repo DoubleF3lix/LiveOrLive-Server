@@ -1,6 +1,6 @@
-﻿using liveorlive_server.HubPartials;
+﻿using LiveOrLiveServer.HubPartials;
 
-namespace liveorlive_server {
+namespace LiveOrLiveServer {
     public class App {
         private readonly WebApplication app;
 

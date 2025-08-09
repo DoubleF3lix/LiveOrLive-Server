@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Extensions;
+﻿using LiveOrLiveServer.Extensions;
 using Microsoft.AspNetCore.SignalR;
 
-namespace liveorlive_server.HubPartials {
+namespace LiveOrLiveServer.HubPartials {
     public partial class LiveOrLiveHub : Hub<IHubServerResponse>, IChatRequest {
         public async Task SendChatMessage(string content) {
             var lobby = Context.GetLobby(_server);

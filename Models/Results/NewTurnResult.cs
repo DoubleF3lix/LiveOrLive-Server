@@ -1,4 +1,4 @@
-﻿namespace liveorlive_server.Models.Results {
+﻿namespace LiveOrLiveServer.Models.Results {
     public abstract class NewTurnResult {
         public required string PlayerUsername { get; set; }
     }

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace liveorlive_server.Enums {
+namespace LiveOrLiveServer.Enums {
     public enum Achievement {
         [Description("Skip yourself by killing a skipped player twice in a game")]
         Whoops,

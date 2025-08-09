@@ -1,6 +1,6 @@
-﻿using liveorlive_server.Enums;
+﻿using LiveOrLiveServer.Enums;
 
-namespace liveorlive_server.Models.Results {
+namespace LiveOrLiveServer.Models.Results {
     public class ShootPlayerResult {
         public BulletType BulletFired { get; set; }
         public int Damage { get; set; }

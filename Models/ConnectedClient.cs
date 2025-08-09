@@ -1,8 +1,8 @@
-﻿using liveorlive_server.Enums;
+﻿using LiveOrLiveServer.Enums;
 using System.Text.Json.Serialization;
 using Tapper;
 
-namespace liveorlive_server.Models {
+namespace LiveOrLiveServer.Models {
     [TranspilationSource]
     public abstract class ConnectedClient(string username, string? connectionId) {
         public string Username { get; set; } = username;

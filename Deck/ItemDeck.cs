@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Enums;
-using liveorlive_server.Models;
+﻿using LiveOrLiveServer.Enums;
+using LiveOrLiveServer.Models;
 
-namespace liveorlive_server.Deck {
+namespace LiveOrLiveServer.Deck {
     /// <summary>
     /// This deck seeks to emulate an actual deck of cards.
     /// That is, players can hoard items, and only cards that are not in play can be dealt.

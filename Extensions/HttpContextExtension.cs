@@ -1,4 +1,4 @@
-﻿namespace liveorlive_server.Extensions {
+﻿namespace LiveOrLiveServer.Extensions {
     public static class HttpContextExtension {
         public static string? GetStringQueryParam(this HttpContext context, string param) {
             var queryParam = context.Request.Query[param].ToString();

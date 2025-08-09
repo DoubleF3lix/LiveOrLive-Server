@@ -1,8 +1,8 @@
-﻿using liveorlive_server.Models;
+﻿using LiveOrLiveServer.Models;
 using Microsoft.AspNetCore.SignalR;
 using System.Diagnostics.CodeAnalysis;
 
-namespace liveorlive_server.Extensions {
+namespace LiveOrLiveServer.Extensions {
     public static class HubCallerContextExtension {
         public static void SetLobbyId(this HubCallerContext context, string gameId) {
             context.Items["lobbyId"] = gameId;

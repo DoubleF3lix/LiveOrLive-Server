@@ -1,9 +1,9 @@
-﻿using liveorlive_server.Enums;
-using liveorlive_server.Models;
-using liveorlive_server.Models.Results;
+﻿using LiveOrLiveServer.Enums;
+using LiveOrLiveServer.Models;
+using LiveOrLiveServer.Models.Results;
 using TypedSignalR.Client;
 
-namespace liveorlive_server.HubPartials
+namespace LiveOrLiveServer.HubPartials
 {
     // These are things that are sent by the server to the client (a response to something on the server, not a response to something the receiving client did)
     // Client calls are defined in the actual partials

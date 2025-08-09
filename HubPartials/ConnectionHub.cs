@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using liveorlive_server.Extensions;
+using LiveOrLiveServer.Extensions;
 using System.Diagnostics;
 using System.Collections.Concurrent;
-using liveorlive_server.Models;
-using liveorlive_server.Enums;
+using LiveOrLiveServer.Models;
+using LiveOrLiveServer.Enums;
 
-namespace liveorlive_server.HubPartials {
+namespace LiveOrLiveServer.HubPartials {
     public partial class LiveOrLiveHub(Server server) : Hub<IHubServerResponse>, IConnectionRequest {
         private readonly static ConcurrentDictionary<string, HubCallerContext> _connectionContexts = [];
         private readonly Server _server = server;

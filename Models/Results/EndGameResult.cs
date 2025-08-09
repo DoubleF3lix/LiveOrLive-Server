@@ -1,4 +1,4 @@
-﻿namespace liveorlive_server.Models.Results {
+﻿namespace LiveOrLiveServer.Models.Results {
     public class EndGameResult {
         /// <summary>
         /// <c>null</c> if there was no winner

@@ -1,8 +1,8 @@
-﻿using liveorlive_server.Enums;
-using liveorlive_server.Extensions;
+﻿using LiveOrLiveServer.Enums;
+using LiveOrLiveServer.Extensions;
 using Microsoft.AspNetCore.SignalR;
 
-namespace liveorlive_server.HubPartials
+namespace LiveOrLiveServer.HubPartials
 {
     public partial class LiveOrLiveHub : Hub<IHubServerResponse>, IItemRequest {
         public async Task UseReverseTurnOrderItem() {

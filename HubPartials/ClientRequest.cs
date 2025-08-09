@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Enums;
+﻿using LiveOrLiveServer.Enums;
 using TypedSignalR.Client;
 
-namespace liveorlive_server.HubPartials
+namespace LiveOrLiveServer.HubPartials
 {
     [Hub]
     public interface IChatRequest {

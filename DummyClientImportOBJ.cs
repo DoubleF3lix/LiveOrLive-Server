@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Models;
+﻿using LiveOrLiveServer.Models;
 using Tapper;
 
-namespace liveorlive_server {
+namespace LiveOrLiveServer {
     [TranspilationSource]
     public class DummyClientImportOBJ {
         // The auto-generated client code imports these things in the .Models folder even if nothing uses them

@@ -1,12 +1,12 @@
-﻿using liveorlive_server.Deck;
-using liveorlive_server.Enums;
-using liveorlive_server.Models;
-using liveorlive_server.Models.Results;
+﻿using LiveOrLiveServer.Deck;
+using LiveOrLiveServer.Enums;
+using LiveOrLiveServer.Models;
+using LiveOrLiveServer.Models.Results;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Tapper;
 
-namespace liveorlive_server {
+namespace LiveOrLiveServer {
     [TranspilationSource]
     public class Lobby {
         /// <summary>

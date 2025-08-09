@@ -1,4 +1,4 @@
-﻿namespace liveorlive_server.Models.Results {
+﻿namespace LiveOrLiveServer.Models.Results {
     public class LifeGambleResult {
         public int LifeChange { get; set; }
         public bool Dead { get; set; }

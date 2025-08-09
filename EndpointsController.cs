@@ -1,8 +1,8 @@
-﻿using liveorlive_server.Models;
+﻿using LiveOrLiveServer.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
-namespace liveorlive_server {
+namespace LiveOrLiveServer {
     [ApiController]
     public class EndpointsController(Server server) : ControllerBase {
         private readonly Server _server = server;

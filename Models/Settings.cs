@@ -1,7 +1,7 @@
-﻿using liveorlive_server.Enums;
+﻿using LiveOrLiveServer.Enums;
 using Tapper;
 
-namespace liveorlive_server.Models {
+namespace LiveOrLiveServer.Models {
     [TranspilationSource]
     public class Settings {
         // Lobby
