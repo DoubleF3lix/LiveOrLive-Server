@@ -10,6 +10,7 @@ namespace liveorlive_server.Models {
         public List<Item> Items { get; set; } = [];
         public bool IsSkipped { get; set; } = false;
         public bool IsRicochet { get; set; } = false;
+        public bool ImmuneToSkip { get; set; } = false;
         public int ReviveCount { get; set; } = 0;
         public bool Eliminated { get; set; } = false;
 
@@ -25,6 +26,7 @@ namespace liveorlive_server.Models {
             Items = [];
             IsSkipped = false;
             IsRicochet = false;
+            ImmuneToSkip = true;
             ReviveCount = 0;
             Eliminated = false;
 

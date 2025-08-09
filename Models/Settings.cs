@@ -34,6 +34,7 @@ namespace liveorlive_server.Models {
         public int MinItemsPerRound { get; set; } = 3;
         public int MaxItemsPerRound { get; set; } = 3;
         public int MaxItems { get; set; } = 3;
+        public bool ShowItems { get; set; } = true; // TODO
         // Whether or not players get first dibs at looting a player on kill
         // This supercedes AllowLootingDead
         public bool LootItemsOnKill { get; set; } = false; // TODO
@@ -68,12 +69,12 @@ namespace liveorlive_server.Models {
         // -1 is infinite, 0 to disable
         public int MaxPlayerRevives { get; set; } = -1;
         // Stacking is linear, not multiplicative, so 2 2x items is 3 damage, not 4
-        public bool AllowDoubleDamageStacking { get; set; } = false; // TODO
+        public bool AllowDoubleDamageStacking { get; set; } = false;
         // If false, players are immune to skips if they lost their last turn
         // Doesn't count if player lost their skip at the end of a round and it never triggered before it was taken away
         public bool AllowSequentialSkips { get; set; } = false; // TODO
         // Allows players to skip themselves
-        public bool AllowSelfSkip { get; set; } = false; // TODO
+        public bool AllowSelfSkip { get; set; } = false;
 
         // Whether the ricochet badge should be shown on player cards
         public bool ShowRicochets { get; set; } = false; // TODO
@@ -94,7 +95,7 @@ namespace liveorlive_server.Models {
         // When enabled, taking a shot that kills a player doesn't end your turn
         public bool SecondWind { get; set; } = false; // TODO
         // Whether or not skip status is copied to the killer on kill. If so, turn immediately ends on kill and their next turn is lost.
-        public bool CopySkipOnKill { get; set; } = true; // TODO
+        public bool CopySkipOnKill { get; set; } = true;
         // Allow other players (not the killer) to steal items from dead players
         public bool AllowLootingDead { get; set; } = false; // TODO
         // Whether or not dead players should be dealt items
@@ -104,7 +105,7 @@ namespace liveorlive_server.Models {
         public bool ClearDeadPlayerItemsAfterRound { get; set; } = false; // TODO
 
         // Key is reward, value is weight (default is 50/50 for +2 or -1)
-        public Dictionary<int, int> LifeGambleWeights = new() { { 2, 1 }, { -1, 1 } }; // TODO
+        public Dictionary<int, int> LifeGambleWeights { get; set; } = new() { { 2, 1 }, { -1, 1 } }; // TODO
 
         /* Intended quirks:
          * Items can be disabled by setting MaxItems = 0
@@ -134,6 +135,9 @@ namespace liveorlive_server.Models {
             MinItemsPerRound = Math.Clamp(MinItemsPerRound, 0, MaxItemsPerRound);
             if (!RandomItemsPerRound) {
                 MinItemsPerRound = MaxItemsPerRound;
+            }
+            if (!ShowItems) {
+                EnableTrenchcoatItem = false;
             }
 
             if (MaxPlayerRevives < 0) {

@@ -422,13 +422,13 @@ namespace liveorlive_server.HubPartials {
                 return false;
             }
 
-            if (lobby.DoubleDamageEnabled) {
-                await Clients.Caller.ActionFailed("Double damage is already activated!");
+            if (!lobby.Settings.AllowDoubleDamageStacking && lobby.DamageForShot > 1) {
+                await Clients.Caller.ActionFailed("Double Damage is already activated!");
                 return false;
             }
 
             lobby.RemoveItemFromPlayer(itemSource, Item.DoubleDamage);
-            lobby.EnableDoubleDamage();
+            lobby.SetDoubleDamage();
             await Clients.Group(lobby.Id).DoubleDamageItemUsed(itemSource.Username);
             await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} activated double damage for the next shot.");
 
@@ -463,6 +463,11 @@ namespace liveorlive_server.HubPartials {
 
             if (targetPlayer.IsSkipped) {
                 await Clients.Caller.ActionFailed($"{targetPlayer.Username} is already skipped!");
+                return false;
+            }
+
+            if (!lobby.Settings.AllowSelfSkip && user == targetPlayer) {
+                await Clients.Caller.ActionFailed($"You can't skip yourself!");
                 return false;
             }
 
@@ -539,8 +544,15 @@ namespace liveorlive_server.HubPartials {
                 await AddGameLogMessage(lobby, $"{shooter.Username} shot {(result.ShotSelf ? "themselves" : target.Username)} with a {result.BulletFired.ToFriendlyString()} round{(result.BulletFired == BulletType.Live ? $" for {result.Damage} damage" : "")}.");
             }
 
-            // It's a turn ending action if it was not a blank round fired at themselves
-            await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
+            if (lobby.Settings.CopySkipOnKill && result.Killed && target.IsSkipped) {
+                shooter.IsSkipped = true;
+                target.IsSkipped = false;
+                await AddGameLogMessage(lobby, $"{shooter.Username} killed a skipped player and has skipped themselves.");
+                await OnActionEnd(lobby, true);
+            } else {
+                // It's a turn ending action if it was not a blank round fired at themselves
+                await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
+            }
         }
 
         /// <summary>

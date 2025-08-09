@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
-
 namespace liveorlive_server {
     public class Server {
         public readonly ConcurrentBag<Lobby> Lobbies = [];

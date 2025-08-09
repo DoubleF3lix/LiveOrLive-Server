@@ -48,7 +48,7 @@ namespace liveorlive_server {
         /// Tracks whether or not double damage is enabled.
         /// </summary>
         [JsonIgnore]
-        public bool DoubleDamageEnabled = false;
+        public int DamageForShot = 1;
 
         /// <summary>
         /// A merging of <see cref="Players"/> and <see cref="Spectators"/>.
@@ -228,10 +228,10 @@ namespace liveorlive_server {
         /// <returns>The data about the shot, including what type, the damage, and whether or not they shot themselves. Doesn't include <c>shooter</c> or <c>target</c> as these are assumed to be owned by the caller. See <see cref="ShootPlayerResult"/>.</returns>
         public ShootPlayerResult ShootPlayer(Player shooter, Player target) {
             var bulletType = _ammoDeck.Pop();
-            var damage = (int)bulletType * (DoubleDamageEnabled ? 2 : 1);
+            var damage = (int)bulletType * DamageForShot;
             AddLives(target, -damage);
             // Always reset anyways, no point in checking
-            DoubleDamageEnabled = false;
+            DamageForShot = 1;
 
             return new ShootPlayerResult {
                 BulletFired = bulletType,
@@ -342,10 +342,10 @@ namespace liveorlive_server {
         }
 
         /// <summary>
-        /// Enables double damage (sets the boolean flag).
+        /// Enables double damage (increases by 1, doesn't check for stacking).
         /// </summary>
-        public void EnableDoubleDamage() {
-            DoubleDamageEnabled = true;
+        public void SetDoubleDamage() {
+            DamageForShot += 1;
         }
         
         /// <summary>
