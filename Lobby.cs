@@ -12,7 +12,7 @@ namespace LiveOrLiveServer {
         /// <summary>
         /// Unique ID for the lobby across all lobbies on the server.
         /// </summary>
-        public string Id { get; set; }
+        public string Id { get; }
         /// <summary>
         /// The name for the lobby. May be the same as <c>Id</c>.
         /// </summary>
@@ -43,12 +43,16 @@ namespace LiveOrLiveServer {
         /// Whether or not the game is in progress.
         /// </summary>
         public bool GameStarted { get; set; } = false;
+        /// <summary>
+        /// Tracks whether or not sudden death is enabled
+        /// </summary>
+        public bool SuddenDeathActivated { get; set; } = false;
 
         /// <summary>
-        /// Tracks whether or not double damage is enabled.
+        /// Tracks how much damage the next shot should do, if it's a live (modified by double damage).
         /// </summary>
         [JsonIgnore]
-        public int DamageForShot = 1;
+        public int DamageForShot { get; set; } = 1;
 
         /// <summary>
         /// A merging of <see cref="Players"/> and <see cref="Spectators"/>.
@@ -183,6 +187,11 @@ namespace LiveOrLiveServer {
             foreach (Player player in Players) {
                 var items = _itemDeck.DealItemsToPlayer(player);
                 dealtItems.Add(player.Username, items);
+
+                if (Settings.LoseSkipAfterRound) {
+                    player.IsSkipped = false;
+                    // Don't reset immunity, provides buffs to players skipped at the wrong time
+                }
             }
 
             _ammoDeck.Refresh();
@@ -217,6 +226,11 @@ namespace LiveOrLiveServer {
                 } else {
                     break;
                 }
+            }
+
+            // No longer immune to being skipped once they get a turn
+            if (!Settings.AllowSequentialSkips) {
+                _turnOrderManager.GetPlayerForCurrentTurn().ImmuneToSkip = false;
             }
         }
 
@@ -354,6 +368,9 @@ namespace LiveOrLiveServer {
         /// <param name="player">The player to skip.</param>
         public void SkipPlayer(Player player) {
             player.IsSkipped = true;
+            if (!Settings.AllowSequentialSkips) {
+                player.ImmuneToSkip = true;
+            }
         }
 
         /// <summary>

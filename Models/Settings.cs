@@ -72,7 +72,7 @@ namespace LiveOrLiveServer.Models {
         public bool AllowDoubleDamageStacking { get; set; } = false;
         // If false, players are immune to skips if they lost their last turn
         // Doesn't count if player lost their skip at the end of a round and it never triggered before it was taken away
-        public bool AllowSequentialSkips { get; set; } = false; // TODO
+        public bool AllowSequentialSkips { get; set; } = false;
         // Allows players to skip themselves
         public bool AllowSelfSkip { get; set; } = false;
 
@@ -84,7 +84,7 @@ namespace LiveOrLiveServer.Models {
         public bool DisableDealReverseAndRicochetWhenTwoPlayers { get; set; } = true; // TODO
 
         // Whether or not a skip is discarded from all players at the end of a round
-        public bool LoseSkipAfterRound { get; set; } = true; // TODO
+        public bool LoseSkipAfterRound { get; set; } = true;
         // Whether ricochet should take skip status into account when shooting the next player in the turn order
         // When true, shoots next player who can actually go in the turn order, otherwise always shoots the next non-dead player
         public bool RicochetIgnoreSkippedPlayers { get; set; } = true; // TODO
@@ -105,18 +105,18 @@ namespace LiveOrLiveServer.Models {
         public bool ClearDeadPlayerItemsAfterRound { get; set; } = false; // TODO
 
         // Key is reward, value is weight (default is 50/50 for +2 or -1)
-        public Dictionary<int, int> LifeGambleWeights { get; set; } = new() { { 2, 1 }, { -1, 1 } }; // TODO
+        public Dictionary<int, int> LifeGambleWeights { get; set; } = new() { { 2, 1 }, { -1, 1 } };
 
         /* Intended quirks:
          * Items can be disabled by setting MaxItems = 0
          * MaxItemsPerRound is used to give a fixed number of items when RandomItemsPerRound = false
-         * If AllowLifeDonation = false but AllowPlayerRevival = true, players can be revived but only to one life
+         * If AllowLifeDonation = false but MaxPlayerRevives > 0, players can be revived but only to one life
          * AllowDoubleDamageStacking has no limit, allowing for lethal combinations
          * When AllowExtraLifeWhenFull = true allows players to "burn" Extra Life items. Extra Life items cannot be used to exceed the max lives, however...
          * AllowLifeGambleExceedMax = true lets players go past MaxLives with no upper bound. If false, Life Gamble items can always be used, but a successful gamble will be capped at MaxItems
          * AllowSelfSkip = true, AllowSequentialSkips = false, and LoseSkipAfterRound = true allow for players to tactically skip themselves at a round end if they want a guarunteed turn next round
          * RicochetIgnoreSkippedPlayers = true has the potential to allow a player to shoot themselves on accident if everyone else is skipped
-         * Sudden Death can be disabled with SuddenDeathActivationPoint = 0, and this value is useless if AllowPlayerRevival = false
+         * Sudden Death can be disabled with SuddenDeathActivationPoint = 0, and this value is useless if MaxPlayerRevives <= 0
          */
         public void Normalize() {
             MaxPlayers = Math.Clamp(MaxPlayers, 2, 64);

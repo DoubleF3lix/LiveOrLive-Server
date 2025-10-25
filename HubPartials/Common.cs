@@ -466,6 +466,11 @@ namespace LiveOrLiveServer.HubPartials {
                 return false;
             }
 
+            if (targetPlayer.ImmuneToSkip) {
+                await Clients.Caller.ActionFailed($"{targetPlayer.Username} cannot be skipped twice in a row!");
+                return false;
+            }
+
             if (!lobby.Settings.AllowSelfSkip && user == targetPlayer) {
                 await Clients.Caller.ActionFailed($"You can't skip yourself!");
                 return false;
