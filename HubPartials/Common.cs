@@ -515,16 +515,21 @@ namespace LiveOrLiveServer.HubPartials {
                 return false;
             }
 
-            // TODO don't stop them from using it if ricochets are anonymous
-            if (targetPlayer.IsRicochet) {
+            // Don't stop them from using it if ricochets are anonymous
+            if (targetPlayer.IsRicochet && lobby.Settings.ShowRicochets) {
                 await Clients.Caller.ActionFailed($"{targetPlayer.Username} is already protected with ricochet!");
                 return false;
             }
 
             lobby.RicochetPlayer(targetPlayer);
-            await Clients.Group(lobby.Id).RicochetItemUsed(target, itemSource.Username);
-            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
 
+            if (lobby.Settings.ShowRicochets) {
+                await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
+                await Clients.Group(lobby.Id).RicochetItemUsed(target, itemSource.Username);
+            } else {
+                await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? $"stole and used a ricochet item from {itemSource.Username}" : "used a ricochet item")}.");
+                await Clients.Group(lobby.Id).RicochetItemUsed(null, itemSource.Username);
+            }
             return true;
         }
 

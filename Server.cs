@@ -1,13 +1,10 @@
 using LiveOrLiveServer.Models;
-using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
 namespace LiveOrLiveServer {
     public class Server {
         public readonly ConcurrentBag<Lobby> Lobbies = [];
-
-        public readonly ConcurrentDictionary<string, HubCallerContext> connectionContexts = [];
 
         public Server() {
             // TODO remove

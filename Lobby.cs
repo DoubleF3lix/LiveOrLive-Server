@@ -14,7 +14,7 @@ namespace LiveOrLiveServer {
         /// </summary>
         public string Id { get; }
         /// <summary>
-        /// The name for the lobby. May be the same as <c>Id</c>.
+        /// The name for the lobby. May be the same as <see cref="Id"/>.
         /// </summary>
         public string Name { get; set; }
         /// <summary>
@@ -186,11 +186,14 @@ namespace LiveOrLiveServer {
             _itemDeck.Refresh();
             foreach (Player player in Players) {
                 var items = _itemDeck.DealItemsToPlayer(player);
+                if (Settings.DisableDealReverseAndRicochetWhenTwoPlayers) {
+                    items = items.Select(item => (item == Item.Ricochet || item == Item.ReverseTurnOrder) ? Item.Invert : item).ToList();
+                }
                 dealtItems.Add(player.Username, items);
 
                 if (Settings.LoseSkipAfterRound) {
                     player.IsSkipped = false;
-                    // Don't reset immunity, provides buffs to players skipped at the wrong time
+                    // Don't reset immunity, provides buffs to players skipped at the wrong time (TODO or maybe make it a setting?)
                 }
             }
 

@@ -77,11 +77,11 @@ namespace LiveOrLiveServer.Models {
         public bool AllowSelfSkip { get; set; } = false;
 
         // Whether the ricochet badge should be shown on player cards
-        public bool ShowRicochets { get; set; } = false; // TODO
+        public bool ShowRicochets { get; set; } = false;
         // Whether or not a counter should be displayed for how many ricochets are active (essentially useless if the above is true)
         public bool ShowRicochetsCounter { get; set; } = true; // TODO
         // Stops reverse turn order items from being dealt with only two players, and turns any existing ones into Invert
-        public bool DisableDealReverseAndRicochetWhenTwoPlayers { get; set; } = true; // TODO
+        public bool DisableDealReverseAndRicochetWhenTwoPlayers { get; set; } = true;
 
         // Whether or not a skip is discarded from all players at the end of a round
         public bool LoseSkipAfterRound { get; set; } = true;
