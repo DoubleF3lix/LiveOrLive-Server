@@ -5,7 +5,7 @@ namespace LiveOrLiveServer.Models {
     [TranspilationSource]
     public class Settings {
         // Lobby
-        // Private = True will hide game from lobby selector
+        // Hides game from lobby selector
         public bool Private { get; set; } = false;
         // How many players can be in a game. No cap on spectators.
         public int MaxPlayers { get; set; } = 8;
@@ -15,9 +15,6 @@ namespace LiveOrLiveServer.Models {
         public int MinLiveRounds { get; set; } = 1;
         public int MaxBlankRounds { get; set; } = 4;
         public int MaxLiveRounds { get; set; } = 4;
-        // Whether or not the client should show how many rounds of each type have been fired
-        // Can't really stop modified clients from tracking this since it's trivial, so we'll keep it completely client side
-        public bool ShowFiredRoundsTally { get; set; } = false; // TODO
 
         // Lives
         // DefaultLives is what players start with, MaxLives is the absolute max they can get with Extra Life items
@@ -34,16 +31,6 @@ namespace LiveOrLiveServer.Models {
         public int MinItemsPerRound { get; set; } = 3;
         public int MaxItemsPerRound { get; set; } = 3;
         public int MaxItems { get; set; } = 3;
-        public bool ShowItems { get; set; } = true; // TODO
-        // Whether or not players get first dibs at looting a player on kill
-        // This supercedes AllowLootingDead
-        public bool LootItemsOnKill { get; set; } = false; // TODO
-        // The maximum number of items that can be looted on kill
-        // TODO make select loot items menu (have item list displayed like item use, but have a number input next to each with a max selection amount) and display on kill according to this setting
-        // Need to add packet to transfer items on loot
-        public int MaxLootItemsOnKill { get; set; } = 2; // TODO
-        // Allows the above to exceed MaxItems
-        public bool AllowLootItemsExceedMax { get; set; } = false; // TODO
 
         // Item enablement (self-explanatory)
         public bool EnableReverseTurnOrderItem { get; set; } = true;
@@ -56,10 +43,16 @@ namespace LiveOrLiveServer.Models {
         public bool EnableDoubleDamageItem { get; set; } = true;
         public bool EnableSkipItem { get; set; } = true;
         public bool EnableRicochetItem { get; set; } = false;
-        public bool EnableTrenchcoatItem { get; set; } = false; // TODO (add functions and packets for usage)
-        public bool EnableMisfireItem { get; set; } = false; // TODO implement
-        public bool EnableHypnotizeItem { get; set; } = false; // TODO implement
-        public bool EnablePocketPistolItem { get; set; } = false; // TODO implement, configurable odds
+        // Hides items for round
+        // public bool EnableTrenchcoatItem { get; set; } = false; // TODO (add functions and packets for usage)
+        // Picks a random number of which decrements per action taken, gun goes off on the player who brings the count to 0
+        // public bool EnableMisfireItem { get; set; } = false; // TODO implement
+        // Force a player to take an action when their turn arrives
+        // public bool EnableHypnotizeItem { get; set; } = false; // TODO implement
+        // 80% chance to shoot target, 20% chance to shoot self
+        // public bool EnablePocketPistolItem { get; set; } = false; // TODO implement
+        // Force the next shot to do nothing
+        // public bool EnableJamItem { get; set; } = false; // TODO implement
 
         // Gameplay
         public bool AnnounceChamberCheckResults { get; set; } = true;
@@ -80,9 +73,6 @@ namespace LiveOrLiveServer.Models {
         public bool ShowRicochets { get; set; } = false;
         // Whether or not a counter should be displayed for how many ricochets are active (essentially useless if the above is true)
         public bool ShowRicochetsCounter { get; set; } = true; // TODO
-        // Stops reverse turn order items from being dealt with only two players, and turns any existing ones into Invert
-        public bool DisableDealReverseAndRicochetWhenTwoPlayers { get; set; } = true;
-
         // Whether or not a skip is discarded from all players at the end of a round
         public bool LoseSkipAfterRound { get; set; } = true;
         // Whether ricochet should take skip status into account when shooting the next player in the turn order
@@ -93,16 +83,9 @@ namespace LiveOrLiveServer.Models {
         public int SuddenDeathActivationPoint { get; set; } = 40; // TODO
 
         // When enabled, taking a shot that kills a player doesn't end your turn
-        public bool SecondWind { get; set; } = false; // TODO
+        public bool SecondWind { get; set; } = false;
         // Whether or not skip status is copied to the killer on kill. If so, turn immediately ends on kill and their next turn is lost.
         public bool CopySkipOnKill { get; set; } = true;
-        // Allow other players (not the killer) to steal items from dead players
-        public bool AllowLootingDead { get; set; } = false; // TODO
-        // Whether or not dead players should be dealt items
-        public bool RefreshDeadPlayerItems { get; set; } = true; // TODO
-        // When true, dead player items are cleared before dealing, allowing essentially an open pot of items for players to steal from
-        // A dead player also assumes control of these items when revived
-        public bool ClearDeadPlayerItemsAfterRound { get; set; } = false; // TODO
 
         // Key is reward, value is weight (default is 50/50 for +2 or -1)
         public Dictionary<int, int> LifeGambleWeights { get; set; } = new() { { 2, 1 }, { -1, 1 } };
@@ -136,9 +119,6 @@ namespace LiveOrLiveServer.Models {
             if (!RandomItemsPerRound) {
                 MinItemsPerRound = MaxItemsPerRound;
             }
-            if (!ShowItems) {
-                EnableTrenchcoatItem = false;
-            }
 
             if (MaxPlayerRevives < 0) {
                 MaxPlayerRevives = int.MaxValue;
@@ -156,10 +136,6 @@ namespace LiveOrLiveServer.Models {
             if (EnableDoubleDamageItem) yield return Item.DoubleDamage;
             if (EnableSkipItem) yield return Item.Skip;
             if (EnableRicochetItem) yield return Item.Ricochet;
-            if (EnableTrenchcoatItem) yield return Item.Trenchcoat; 
-            if (EnableMisfireItem) yield return Item.Misfire;
-            if (EnableHypnotizeItem) yield return Item.Hypnotize;
-            if (EnablePocketPistolItem) yield return Item.PocketPistol;
         }
     }
 }

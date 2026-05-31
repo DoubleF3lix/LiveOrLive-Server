@@ -101,7 +101,6 @@ namespace LiveOrLiveServer.HubPartials {
             if (isTurnEndingMove) {
                 await NewTurn(lobby);
             }
-
         }
 
         /// <summary>
@@ -547,7 +546,7 @@ namespace LiveOrLiveServer.HubPartials {
 
             // Can't eliminate/kill with a blank round... hopefully
             if (result.Eliminated) {
-                await AddGameLogMessage(lobby, $"{shooter.Username} shot, killed, and eliminated {(result.ShotSelf ? "themselves" : target.Username)} with a live round for {result.Damage} damage");
+                await AddGameLogMessage(lobby, $"{shooter.Username} shot, killed, and eliminated {(result.ShotSelf ? "themselves" : target.Username)} with a live round for {result.Damage} damage.");
             } else if (result.Killed) {
                 await AddGameLogMessage(lobby, $"{shooter.Username} shot and killed {(result.ShotSelf ? "themselves" : target.Username)} with a live round for {result.Damage} damage.");
             } else {
@@ -560,8 +559,13 @@ namespace LiveOrLiveServer.HubPartials {
                 await AddGameLogMessage(lobby, $"{shooter.Username} killed a skipped player and has skipped themselves.");
                 await OnActionEnd(lobby, true);
             } else {
-                // It's a turn ending action if it was not a blank round fired at themselves
-                await OnActionEnd(lobby, !result.ShotSelf || result.BulletFired != BulletType.Blank);
+                // If either of these are true, the turn isn't over
+                var shotSelfWithBlank = result.ShotSelf && result.BulletFired == BulletType.Blank;
+                var secondWindKill = !result.ShotSelf && result.Killed && lobby.Settings.SecondWind;
+                if (secondWindKill) {
+                    await AddGameLogMessage(lobby, $"{shooter.Username} has a Second Wind!");
+                }
+                await OnActionEnd(lobby, !shotSelfWithBlank && !secondWindKill);
             }
         }
 

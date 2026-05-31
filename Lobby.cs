@@ -186,7 +186,7 @@ namespace LiveOrLiveServer {
             _itemDeck.Refresh();
             foreach (Player player in Players) {
                 var items = _itemDeck.DealItemsToPlayer(player);
-                if (Settings.DisableDealReverseAndRicochetWhenTwoPlayers) {
+                if (Players.Count <= 2) {
                     items = items.Select(item => (item == Item.Ricochet || item == Item.ReverseTurnOrder) ? Item.Invert : item).ToList();
                 }
                 dealtItems.Add(player.Username, items);

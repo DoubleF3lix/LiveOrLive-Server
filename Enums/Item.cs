@@ -13,10 +13,6 @@ namespace LiveOrLiveServer.Enums {
         DoubleDamage,
         Skip,
         Ricochet,
-        Trenchcoat,
-        Misfire,
-        Hypnotize,
-        PocketPistol
     }
 
     public static class ItemExtension {
@@ -32,10 +28,6 @@ namespace LiveOrLiveServer.Enums {
                 Item.DoubleDamage => "Double Damage",
                 Item.Skip => "Skip",
                 Item.Ricochet => "Ricochet",
-                Item.Trenchcoat => "Trenchcoat",
-                Item.Misfire => "Misfire",
-                Item.Hypnotize => "Hypnotize",
-                Item.PocketPistol => "Pocket Pistol",
                 _ => "null"
             };
         }
