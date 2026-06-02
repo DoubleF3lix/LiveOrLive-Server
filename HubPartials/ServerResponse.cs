@@ -43,7 +43,7 @@ namespace LiveOrLiveServer.HubPartials
         Task TurnStarted(string username);
         Task TurnEnded(string username);
         Task GetLobbyDataResponse(Lobby lobbyData);
-        Task PlayerShotAt(string target, BulletType bulletType, int damage);
+        Task PlayerShotAt(string target, BulletType bulletType, int damage, List<string> ricochets);
     }
 
     [Receiver]

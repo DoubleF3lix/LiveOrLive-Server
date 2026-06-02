@@ -53,20 +53,42 @@ namespace LiveOrLiveServer {
             return player != null;
         }
 
+        /// <summary>
+        /// Reverses the turn order.
+        /// </summary>
         public void ReverseTurnOrder() {
             _players.Reverse();
             _currentTurnIndex = _players.Count - _currentTurnIndex - 1;
         }
 
+        /// <summary>
+        /// Removes a player from the turn order.
+        /// </summary>
+        /// <param name="player">The player to remove from the turn order.</param>
+        /// <exception cref="InvalidOperationException">Thrown if <paramref name="player"/> isn't found in the turn order.</exception>
         public void RemovePlayer(Player player) {
             var index = _players.IndexOf(player);
             if (index == -1) {
-                throw new InvalidOperationException($"Tried to remove player from TurnOrderManager that didn't exist, username{player.Username}");
+                throw new InvalidOperationException($"Tried to remove player from TurnOrderManager that didn't exist, username: {player.Username}");
             }
             if (index <= _currentTurnIndex) {
                 _currentTurnIndex--;
             }
             _players.RemoveAt(index);
+        }
+
+        /// <summary>
+        /// Fetches the player after another player in the turn order, wrapping around as needed. Used for ricochet checking.
+        /// </summary>
+        /// <param name="player">The player that we want to fetch the next player relative to.</param>
+        /// <returns>The player after <paramref name="player"/>.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if <paramref name="player"/> isn't found in the turn order.</exception>
+        public Player GetPlayerAfter(Player player) {
+            var index = _players.IndexOf(player);
+            if (index == -1) {
+                throw new InvalidOperationException($"Tried to fetch player after a player that didn't exist, username: {player.Username}");
+            }
+            return _players[(index + 1) % _players.Count];
         }
     }
 }

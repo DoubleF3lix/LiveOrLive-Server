@@ -246,6 +246,14 @@ namespace LiveOrLiveServer {
         public ShootPlayerResult ShootPlayer(Player shooter, Player target) {
             var bulletType = _ammoDeck.Pop();
             var damage = (int)bulletType * DamageForShot;
+
+            List<Player> ricochets = [];
+            while (target.IsRicochet) {
+                ricochets.Add(target);
+                target.IsRicochet = false;
+                target = _turnOrderManager.GetPlayerAfter(target);
+            }
+
             AddLives(target, -damage);
             // Always reset anyways, no point in checking
             DamageForShot = 1;
@@ -255,7 +263,9 @@ namespace LiveOrLiveServer {
                 Damage = damage,
                 ShotSelf = shooter == target,
                 Killed = target.Lives <= 0,
-                Eliminated = target.Eliminated
+                Eliminated = target.Eliminated,
+                PlayerShot = target,
+                Ricochets = ricochets
             };
         }
 
@@ -299,7 +309,7 @@ namespace LiveOrLiveServer {
         public void AddLives(Player player, int add, bool allowExceedMax = false) {
             player.Lives = Math.Clamp(player.Lives + add, 0, allowExceedMax ? int.MaxValue : Settings.MaxLives);
 
-            // This is also used for players getting shot or life gambling, so we need to check for dead status.
+            // This method is also used for players getting shot or life gambling, so we need to check for dead status.
             if (player.Lives <= 0) {
                 if (player.ReviveCount >= Settings.MaxPlayerRevives) {
                     player.Eliminated = true;

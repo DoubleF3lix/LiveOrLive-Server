@@ -298,7 +298,7 @@ namespace LiveOrLiveServer.HubPartials {
             // The above calls should handle printing any success/error messages, so we're done
             if (stolenItemUseSuccess) {
                 lobby.RemoveItemFromPlayer(user, Item.Pickpocket);
-                lobby.RemoveItemFromPlayer(stealTargetPlayer, itemToSteal);
+                // Don't remove the stolen item from the target here, as it's done by the ItemActual call above
                 await Clients.Group(lobby.Id).PickpocketItemUsed(stealTarget, itemToSteal, stolenItemTarget, user.Username);
             }
 
@@ -396,7 +396,7 @@ namespace LiveOrLiveServer.HubPartials {
                 await Clients.Caller.ChamberCheckItemUsed(result.ChamberRoundType, itemSource.Username);
                 await Clients.OthersInGroup(lobby.Id).ChamberCheckItemUsed(null, itemSource.Username);
             }
-            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} peeked the chamber." + (lobby.Settings.AnnounceChamberCheckResults ? $"It's a {result.ChamberRoundType.ToString().ToLower()} round!" : ""));
+            await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} peeked the chamber." + (lobby.Settings.AnnounceChamberCheckResults ? $" It's a {result.ChamberRoundType.ToString().ToLower()} round!" : ""));
 
             return true;
         }
@@ -541,8 +541,24 @@ namespace LiveOrLiveServer.HubPartials {
         private async Task ShootPlayerActual(Lobby lobby, Player shooter, Player target) {
             var result = lobby.ShootPlayer(shooter, target);
 
+            // TODO need to send result.Ricochets to the client so they can be removed
+
             // Be verbose about who shot who (even if it's themselves)
-            await Clients.Group(lobby.Id).PlayerShotAt(target.Username, result.BulletFired, result.Damage);
+            await Clients.Group(lobby.Id).PlayerShotAt(target.Username, result.BulletFired, result.Damage, result.Ricochets.Select(r => r.Username).ToList());
+
+            switch (result.Ricochets.Count) {
+                case 1:
+                    await AddGameLogMessage(lobby, $"A shot ricocheted off {result.Ricochets[0].Username} and hit {result.PlayerShot.Username}.");
+                    break;
+                case 2:
+                    await AddGameLogMessage(lobby, $"A shot ricocheted off {result.Ricochets[0].Username} and {result.Ricochets[1].Username}, and then hit {result.PlayerShot.Username}.");
+                    break;
+                case >= 3:
+                    var names = result.Ricochets.Select(r => r.Username).ToList();
+                    var formatted = FormatNames(names);
+                    await AddGameLogMessage(lobby, $"A shot ricocheted off {formatted}, before finally hitting {result.PlayerShot.Username}.");
+                    break;
+            }
 
             // Can't eliminate/kill with a blank round... hopefully
             if (result.Eliminated) {
@@ -578,6 +594,16 @@ namespace LiveOrLiveServer.HubPartials {
             await AddGameLogMessage(lobby, $"{player.Username} has forfeited their turn.");
             await ShootPlayerActual(lobby, player, player);
             await NewTurn(lobby);
+        }
+
+        private static string FormatNames(List<string> names) {
+            return names.Count switch {
+                0 => "",
+                1 => names[0],
+                2 => $"{names[0]} and {names[1]}",
+                _ => string.Join(", ", names.Take(names.Count - 1))
+                     + $", and {names[^1]}"
+            };
         }
     }
 }
