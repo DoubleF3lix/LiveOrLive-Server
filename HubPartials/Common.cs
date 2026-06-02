@@ -541,10 +541,8 @@ namespace LiveOrLiveServer.HubPartials {
         private async Task ShootPlayerActual(Lobby lobby, Player shooter, Player target) {
             var result = lobby.ShootPlayer(shooter, target);
 
-            // TODO need to send result.Ricochets to the client so they can be removed
-
             // Be verbose about who shot who (even if it's themselves)
-            await Clients.Group(lobby.Id).PlayerShotAt(target.Username, result.BulletFired, result.Damage, result.Ricochets.Select(r => r.Username).ToList());
+            await Clients.Group(lobby.Id).PlayerShotAt(result.PlayerShot.Username, result.BulletFired, result.Damage, result.Ricochets.Select(r => r.Username).ToList());
 
             switch (result.Ricochets.Count) {
                 case 1:
