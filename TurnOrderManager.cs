@@ -90,5 +90,25 @@ namespace LiveOrLiveServer {
             }
             return _players[(index + 1) % _players.Count];
         }
+
+        /// Unused for now. May be used if a ricochet hitting a skipped player makes it pong ping to a random player.
+        private Player GetRandomPlayerExcept(Player player) {
+            if (_players.Count <= 1) {
+                throw new InvalidOperationException("Cannot select a random player when there are no other players.");
+            }
+
+            var excludedPlayerIndex = _players.IndexOf(player);
+            if (excludedPlayerIndex == -1) {
+                throw new InvalidOperationException($"Tried to fetch a random player excluding a player that didn't exist, username: {player.Username}");
+            }
+
+            // Random index as Count - 1...
+            var randomPlayerIndex = Random.Shared.Next(_players.Count - 1);
+            // ...then create a gap around the skipped player
+            if (randomPlayerIndex >= excludedPlayerIndex) {
+                randomPlayerIndex++;
+            }
+            return _players[randomPlayerIndex];
+        }
     }
 }

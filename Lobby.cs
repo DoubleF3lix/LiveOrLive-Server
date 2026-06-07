@@ -1,13 +1,11 @@
 ﻿using LiveOrLiveServer.Deck;
 using LiveOrLiveServer.Enums;
 using LiveOrLiveServer.Models;
+using LiveOrLiveServer.Models.Dto;
 using LiveOrLiveServer.Models.Results;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
-using Tapper;
 
 namespace LiveOrLiveServer {
-    [TranspilationSource]
     public class Lobby {
         /// <summary>
         /// Unique ID for the lobby across all lobbies on the server.
@@ -43,21 +41,15 @@ namespace LiveOrLiveServer {
         /// Whether or not the game is in progress.
         /// </summary>
         public bool GameStarted { get; set; } = false;
-        /// <summary>
-        /// Tracks whether or not sudden death is enabled
-        /// </summary>
-        public bool SuddenDeathActivated { get; set; } = false;
 
         /// <summary>
         /// Tracks how much damage the next shot should do, if it's a live (modified by double damage).
         /// </summary>
-        [JsonIgnore]
         public int DamageForShot { get; set; } = 1;
 
         /// <summary>
         /// A merging of <see cref="Players"/> and <see cref="Spectators"/>.
         /// </summary>
-        [JsonIgnore]
         public List<ConnectedClient> Clients => [.. Players.Cast<ConnectedClient>().Union(Spectators)];
 
         /// <summary>
@@ -69,17 +61,22 @@ namespace LiveOrLiveServer {
         /// </summary>
         public string? CurrentTurn => _turnOrderManager.TryGetPlayerForCurrentTurn(out var player) ? player.Username : null;
 
+        /// <summary>
+        /// Gets the amount of bullets left in the deck.
+        /// </summary>
         public int AmmoLeftInChamber => _ammoDeck.Count;
+        /// <summary>
+        /// Tracks whether or not sudden death is enabled
+        /// </summary>
+        public bool SuddenDeathActivated { get; set; } = false;
 
         /// <summary>
         /// Gets all chat messages for this lobby.
         /// </summary>
-        [JsonIgnore]
         public List<ChatMessage> ChatMessages => _chat.Messages;
         /// <summary>
         /// Gets all game log messages for the current/most recent game for this lobby. Cleared when a new game starts.
         /// </summary>
-        [JsonIgnore]
         public List<GameLogMessage> GameLogMessages => _gameLog.Messages;
 
         /// <summary>
@@ -395,6 +392,19 @@ namespace LiveOrLiveServer {
         }
 
         /// <summary>
+        /// Activates sudden death for this lobby. 
+        /// Sudden death disables player revives and turns all extra life items into double damage.
+        /// </summary>
+        public void ActivateSuddenDeath() {
+            SuddenDeathActivated = true;
+            // Change all instances of ExtraLife into DoubleDamage
+            foreach (var player in Players) {
+                player.Items = [.. player.Items.Select(i => i == Item.ExtraLife ? Item.DoubleDamage : i)];
+            }
+            _itemDeck.ReplaceItem(Item.ExtraLife, Item.DoubleDamage);
+        }
+
+        /// <summary>
         /// Registers a <see cref="ConnectedClient"/> object with the lobby by username. Handles assigning an existing, not in-game client, otherwise makes a new object. Call this when a client is connecting to the lobby.
         /// Callers of this should check the client doesn't already exist in the lobby first.
         /// </summary>
@@ -471,6 +481,23 @@ namespace LiveOrLiveServer {
         public bool TryGetClientByUsername(string username, [NotNullWhen(true)] out ConnectedClient? client) {
             client = Clients.FirstOrDefault(client => client.Username == username);
             return client != null;
+        }
+
+        public LobbyDto ToDto() {
+            return new LobbyDto {
+                Id = Id,
+                Name = Name,
+                CreationTime = CreationTime,
+                Settings = Settings,
+                Players = [.. Players.Select(p => p.ToDto(Settings.ShowRicochets))],
+                Spectators = [.. Spectators.Select(s => s.ToDto())],
+                Host = Host,
+                GameStarted = GameStarted,
+                TurnOrder = TurnOrder,
+                CurrentTurn = CurrentTurn,
+                AmmoLeftInChamber = AmmoLeftInChamber,
+                SuddenDeathActivated = SuddenDeathActivated
+            };
         }
     }
 }

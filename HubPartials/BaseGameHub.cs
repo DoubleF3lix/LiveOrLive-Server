@@ -20,7 +20,7 @@ namespace LiveOrLiveServer.HubPartials {
         }
 
         public async Task GetLobbyDataRequest() {
-            var lobby = Context.GetLobby(_server);
+            var lobby = Context.GetLobby(_server).ToDto();
             await Clients.Caller.GetLobbyDataResponse(lobby);
         }
 

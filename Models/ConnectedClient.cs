@@ -1,12 +1,10 @@
 ﻿using LiveOrLiveServer.Enums;
-using System.Text.Json.Serialization;
-using Tapper;
+using LiveOrLiveServer.Models.Dto;
 
 namespace LiveOrLiveServer.Models {
-    [TranspilationSource]
     public abstract class ConnectedClient(string username, string? connectionId) {
         public string Username { get; set; } = username;
-        [JsonIgnore]
+        // Null if not connected
         public string? ConnectionId { get; set; } = connectionId;
 
         public long JoinTime { get; } = (long)DateTime.UtcNow.Subtract(DateTime.UnixEpoch).TotalSeconds;
@@ -19,6 +17,14 @@ namespace LiveOrLiveServer.Models {
         // Stop VS warnings since we override Equals()
         public override int GetHashCode() {
             return HashCode.Combine(Username, ConnectionId ?? "", JoinTime);
+        }
+
+        public ConnectedClientDto ToDto() {
+            return new ConnectedClientDto { 
+                Username = Username, 
+                JoinTime = JoinTime,
+                ClientType = ClientType, 
+            };
         }
     }
 }

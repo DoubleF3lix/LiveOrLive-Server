@@ -1,5 +1,5 @@
 ﻿namespace LiveOrLiveServer.Models.Results {
-    public class EndGameResult {
+    public record EndGameResult {
         /// <summary>
         /// <c>null</c> if there was no winner
         /// </summary>

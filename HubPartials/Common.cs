@@ -1,4 +1,5 @@
 ﻿using LiveOrLiveServer.Enums;
+using LiveOrLiveServer.Extensions;
 using LiveOrLiveServer.Models;
 using LiveOrLiveServer.Models.Results;
 using Microsoft.AspNetCore.SignalR;
@@ -85,8 +86,10 @@ namespace LiveOrLiveServer.HubPartials {
         /// <param name="lobby">The lobby to perform the end of action checks on.</param>
         /// <param name="isTurnEndingMove">Whether or not the action should end the players turn.</param>
         private async Task OnActionEnd(Lobby lobby, bool isTurnEndingMove) {
-            // TODO elimination checking (take in acted on player)
-            // Also check for sudden death enabling
+            var aliveRatio = lobby.Players.Count(p => !p.Eliminated) * 100.0 / lobby.Players.Count;
+            if (aliveRatio <= lobby.Settings.SuddenDeathActivationPoint) {
+                await ActivateSuddenDeath(lobby);
+            }
 
             // If the game is over, we're done
             if (await EndGameConditional(lobby)) {
@@ -194,6 +197,11 @@ namespace LiveOrLiveServer.HubPartials {
         private async Task<bool> UseExtraLifeItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
             if (!lobby.Settings.EnableExtraLifeItem) {
                 await Clients.Caller.ActionFailed("Extra Life is not enabled!");
+                return false;
+            }
+
+            if (lobby.SuddenDeathActivated) {
+                await Clients.Caller.ActionFailed("Extra Life is disabled when Sudden Death is enabled!");
                 return false;
             }
 
@@ -528,6 +536,12 @@ namespace LiveOrLiveServer.HubPartials {
             } else {
                 await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? $"stole and used a ricochet item from {itemSource.Username}" : "used a ricochet item")}.");
                 await Clients.Group(lobby.Id).RicochetItemUsed(null, itemSource.Username);
+                // TODO need to tell client to add show badge for the client that used it and to the player its on
+                // TODO sanitize in BaseGameHub.GetLobbyDataRequest (sanitize Lobby data to hide things client shouldn't know like ricochet status)
+                // TODO verify the below works
+                var connectionIds = lobby.Players.Where(p => p.Username != targetPlayer.Username && p.Username != itemSource.Username).Select(p => p.ConnectionId).Cast<string>();
+                await Clients.AllExcept(connectionIds).RicochetItemUsed(target, itemSource.Username);
+                
             }
             return true;
         }
@@ -542,7 +556,7 @@ namespace LiveOrLiveServer.HubPartials {
             var result = lobby.ShootPlayer(shooter, target);
 
             // Be verbose about who shot who (even if it's themselves)
-            await Clients.Group(lobby.Id).PlayerShotAt(result.PlayerShot.Username, result.BulletFired, result.Damage, result.Ricochets.Select(r => r.Username).ToList());
+            await Clients.Group(lobby.Id).PlayerShotAt(result.PlayerShot.Username, result.BulletFired, result.Damage, [.. result.Ricochets.Select(r => r.Username)]);
 
             switch (result.Ricochets.Count) {
                 case 1:
@@ -560,16 +574,17 @@ namespace LiveOrLiveServer.HubPartials {
 
             // Can't eliminate/kill with a blank round... hopefully
             if (result.Eliminated) {
-                await AddGameLogMessage(lobby, $"{shooter.Username} shot, killed, and eliminated {(result.ShotSelf ? "themselves" : target.Username)} with a live round for {result.Damage} damage.");
+                await Clients.Group(lobby.Id).PlayerEliminated(result.PlayerShot.Username);
+                await AddGameLogMessage(lobby, $"{shooter.Username} shot, killed, and eliminated {(result.ShotSelf ? "themselves" : result.PlayerShot.Username)} with a live round for {result.Damage} damage.");
             } else if (result.Killed) {
-                await AddGameLogMessage(lobby, $"{shooter.Username} shot and killed {(result.ShotSelf ? "themselves" : target.Username)} with a live round for {result.Damage} damage.");
+                await AddGameLogMessage(lobby, $"{shooter.Username} shot and killed {(result.ShotSelf ? "themselves" : result.PlayerShot.Username)} with a live round for {result.Damage} damage.");
             } else {
-                await AddGameLogMessage(lobby, $"{shooter.Username} shot {(result.ShotSelf ? "themselves" : target.Username)} with a {result.BulletFired.ToFriendlyString()} round{(result.BulletFired == BulletType.Live ? $" for {result.Damage} damage" : "")}.");
+                await AddGameLogMessage(lobby, $"{shooter.Username} shot {(result.ShotSelf ? "themselves" : result.PlayerShot.Username)} with a {result.BulletFired.ToFriendlyString()} round{(result.BulletFired == BulletType.Live ? $" for {result.Damage} damage" : "")}.");
             }
 
-            if (lobby.Settings.CopySkipOnKill && result.Killed && target.IsSkipped) {
+            if (lobby.Settings.CopySkipOnKill && result.Killed && result.PlayerShot.IsSkipped) {
                 shooter.IsSkipped = true;
-                target.IsSkipped = false;
+                result.PlayerShot.IsSkipped = false;
                 await AddGameLogMessage(lobby, $"{shooter.Username} killed a skipped player and has skipped themselves.");
                 await OnActionEnd(lobby, true);
             } else {
@@ -592,6 +607,12 @@ namespace LiveOrLiveServer.HubPartials {
             await AddGameLogMessage(lobby, $"{player.Username} has forfeited their turn.");
             await ShootPlayerActual(lobby, player, player);
             await NewTurn(lobby);
+        }
+
+        private async Task ActivateSuddenDeath(Lobby lobby) {
+            lobby.ActivateSuddenDeath();
+            await Clients.Group(lobby.Id).SuddenDeathActivated();
+            await AddGameLogMessage(lobby, "Sudden Death has been activated.");
         }
 
         private static string FormatNames(List<string> names) {

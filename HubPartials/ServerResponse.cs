@@ -1,5 +1,6 @@
 ﻿using LiveOrLiveServer.Enums;
 using LiveOrLiveServer.Models;
+using LiveOrLiveServer.Models.Dto;
 using LiveOrLiveServer.Models.Results;
 using TypedSignalR.Client;
 
@@ -28,11 +29,11 @@ namespace LiveOrLiveServer.HubPartials
     public interface IConnectionResponse {
         Task ConnectionSuccess();
         Task ConnectionFailed(string reason);
-        Task ClientJoined(ConnectedClient client);
+        Task ClientJoined(ConnectedClientDto client);
         Task ClientLeft(string username);
         Task HostChanged(string? previous, string? current, string? reason);
         Task ClientKicked(string username);
-        Task ClientTypeChanged(ConnectedClient newClient);
+        Task ClientTypeChanged(ConnectedClientDto newClient);
     }
 
     [Receiver]
@@ -42,8 +43,10 @@ namespace LiveOrLiveServer.HubPartials
         Task NewRoundStarted(NewRoundResult result);
         Task TurnStarted(string username);
         Task TurnEnded(string username);
-        Task GetLobbyDataResponse(Lobby lobbyData);
+        Task GetLobbyDataResponse(LobbyDto lobbyData);
         Task PlayerShotAt(string target, BulletType bulletType, int damage, List<string> ricochets);
+        Task SuddenDeathActivated();
+        Task PlayerEliminated(string username);
     }
 
     [Receiver]

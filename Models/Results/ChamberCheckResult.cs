@@ -1,7 +1,7 @@
 ﻿using LiveOrLiveServer.Enums;
 
 namespace LiveOrLiveServer.Models.Results {
-    public class ChamberCheckResult {
+    public record ChamberCheckResult {
         public BulletType ChamberRoundType { get; set; }
     }
 }

@@ -58,7 +58,13 @@ namespace LiveOrLiveServer.HubPartials {
 
             // INFORM THE MEN. A NEW client HAS ARRIVED
             _connectionContexts[Context.ConnectionId] = Context;
-            await Clients.OthersInGroup(lobbyId).ClientJoined(client);
+            if (client is Player playerClient) {
+                await Clients.OthersInGroup(lobbyId).ClientJoined(playerClient.ToDto(lobby.Settings.ShowRicochets));
+            } else if (client is Spectator spectatorClient) {
+                await Clients.OthersInGroup(lobbyId).ClientJoined(spectatorClient.ToDto());
+            } else {
+                await Clients.OthersInGroup(lobbyId).ClientJoined(client.ToDto());
+            }
             await Clients.Caller.ConnectionSuccess();
 
             if (lobby.Host == null) {
@@ -168,12 +174,12 @@ namespace LiveOrLiveServer.HubPartials {
                         return;
                     }
                     var newPlayerResult = lobby.ChangeSpectatorToPlayer(spectator);
-                    await Clients.Group(lobby.Id).ClientTypeChanged(newPlayerResult.NewPlayer);
+                    await Clients.Group(lobby.Id).ClientTypeChanged(newPlayerResult.NewPlayer.ToDto());
                     break;
                 // Move to spectators
                 case Player player:
                     var newSpectatorResult = lobby.ChangePlayerToSpectator(player);
-                    await Clients.Group(lobby.Id).ClientTypeChanged(newSpectatorResult.NewSpectator);
+                    await Clients.Group(lobby.Id).ClientTypeChanged(newSpectatorResult.NewSpectator.ToDto());
                     if (lobby.GameStarted) {
                         await EndGameConditional(lobby);
                     }

@@ -77,10 +77,10 @@ namespace LiveOrLiveServer.Models {
         public bool LoseSkipAfterRound { get; set; } = true;
         // Whether ricochet should take skip status into account when shooting the next player in the turn order
         // When true, shoots next player who can actually go in the turn order, otherwise always shoots the next non-dead player
-        public bool RicochetIgnoreSkippedPlayers { get; set; } = true; // TODO
+        public bool RicochetIgnoreSkippedPlayers { get; set; } = true; // TODO does this suck?
         // What percentage of players have to be left for sudden death to activate
         // Sudden death disables revival, and turns all Extra Life items into Double Damage
-        public int SuddenDeathActivationPoint { get; set; } = 40; // TODO
+        public int SuddenDeathActivationPoint { get; set; } = 90;
 
         // When enabled, taking a shot that kills a player doesn't end your turn
         public bool SecondWind { get; set; } = false;

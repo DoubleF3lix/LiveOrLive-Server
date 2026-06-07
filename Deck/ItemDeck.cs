@@ -63,5 +63,17 @@ namespace LiveOrLiveServer.Deck {
             player.Items.AddRange(output);
             return output;
         }
+
+        /// <summary>
+        /// Replaces all instances of an item in the deck with another
+        /// </summary>
+        /// <param name="item">The item to be replaced</param>
+        /// <param name="replaceWith">The item to replace with</param>
+        public void ReplaceItem(Item item, Item replaceWith) {
+            for (int i = 0; i < _deck.Count; i++) {
+                if (_deck[i] == item)
+                    _deck[i] = replaceWith;
+            }
+        }
     }
 }
