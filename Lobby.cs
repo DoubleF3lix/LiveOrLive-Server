@@ -331,13 +331,12 @@ namespace LiveOrLiveServer {
         /// <param name="player">The player to gamble lives on.</param>
         /// <returns>The gain/loss of lives for the player. See <see cref="LifeGambleResult"/>.</returns>
         public LifeGambleResult LifeGamble(Player player) {
-            var random = new Random();
             var options = new List<int>();
 
             foreach (var weights in Settings.LifeGambleWeights) {
                 options.AddRange(Enumerable.Repeat(weights.Key, weights.Value));
             }
-            var roll = options[random.Next(options.Count)];
+            var roll = options[Random.Shared.Next(options.Count)];
             AddLives(player, roll, Settings.AllowLifeGambleExceedMax);
 
             return new LifeGambleResult {

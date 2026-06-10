@@ -38,7 +38,7 @@ namespace LiveOrLiveServer.Deck {
         public override void Refresh() {
             Shuffle();
             _numItemsToDeal = _settings.RandomItemsPerRound ? 
-                new Random().Next(_settings.MinItemsPerRound, _settings.MaxBlankRounds) 
+                Random.Shared.Next(_settings.MinItemsPerRound, _settings.MaxBlankRounds) 
                 : _settings.MaxItemsPerRound;
         }
 

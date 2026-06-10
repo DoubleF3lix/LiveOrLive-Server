@@ -537,7 +537,6 @@ namespace LiveOrLiveServer.HubPartials {
                 await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? $"stole and used a ricochet item from {itemSource.Username}" : "used a ricochet item")}.");
                 await Clients.Group(lobby.Id).RicochetItemUsed(null, itemSource.Username);
                 // TODO need to tell client to add show badge for the client that used it and to the player its on
-                // TODO sanitize in BaseGameHub.GetLobbyDataRequest (sanitize Lobby data to hide things client shouldn't know like ricochet status)
                 // TODO verify the below works
                 var connectionIds = lobby.Players.Where(p => p.Username != targetPlayer.Username && p.Username != itemSource.Username).Select(p => p.ConnectionId).Cast<string>();
                 await Clients.AllExcept(connectionIds).RicochetItemUsed(target, itemSource.Username);
