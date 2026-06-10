@@ -25,7 +25,7 @@ namespace LiveOrLiveServer.Models {
             Items = [];
             IsSkipped = false;
             IsRicochet = false;
-            ImmuneToSkip = true;
+            ImmuneToSkip = false;
             ReviveCount = 0;
             Eliminated = false;
 

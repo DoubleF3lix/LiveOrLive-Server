@@ -45,8 +45,9 @@ namespace LiveOrLiveServer.HubPartials
         Task TurnEnded(string username);
         Task GetLobbyDataResponse(LobbyDto lobbyData);
         Task PlayerShotAt(string target, BulletType bulletType, int damage, List<string> ricochets);
-        Task SuddenDeathActivated();
         Task PlayerEliminated(string username);
+        Task SuddenDeathActivated();
+        Task ShowdownActivated();
     }
 
     [Receiver]

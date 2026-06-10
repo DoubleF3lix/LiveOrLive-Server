@@ -91,6 +91,10 @@ namespace LiveOrLiveServer.HubPartials {
                 await ActivateSuddenDeath(lobby);
             }
 
+            if (lobby.Players.Count(p => !p.Eliminated) == 2) {
+                await ActivateShowdown(lobby);
+            }
+
             // If the game is over, we're done
             if (await EndGameConditional(lobby)) {
                 return;
@@ -339,6 +343,7 @@ namespace LiveOrLiveServer.HubPartials {
             await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $" from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(Math.Abs(result.LifeChange) == 1 ? "life" : "lives")}.");
 
             if (result.Eliminated) {
+                await Clients.Group(lobby.Id).PlayerEliminated(user.Username);
                 await AddGameLogMessage(lobby, $"{user.Username} has been eliminated.");
             } else if (result.Dead) {
                 await AddGameLogMessage(lobby, $"{user.Username} is dead.");
@@ -612,6 +617,11 @@ namespace LiveOrLiveServer.HubPartials {
             lobby.ActivateSuddenDeath();
             await Clients.Group(lobby.Id).SuddenDeathActivated();
             await AddGameLogMessage(lobby, "Sudden Death has been activated.");
+        }
+
+        private async Task ActivateShowdown(Lobby lobby) {
+            lobby.ActivateShowdown();
+            await Clients.Group(lobby.Id).ShowdownActivated();
         }
 
         private static string FormatNames(List<string> names) {

@@ -403,6 +403,14 @@ namespace LiveOrLiveServer {
             _itemDeck.ReplaceItem(Item.ExtraLife, Item.DoubleDamage);
         }
 
+        public void ActivateShowdown() {
+            foreach (var player in Players) {
+                player.Items = [.. player.Items.Select(i => i == Item.ReverseTurnOrder || i == Item.Ricochet ? Item.Invert: i)];
+            }
+            _itemDeck.ReplaceItem(Item.ReverseTurnOrder, Item.Invert);
+            _itemDeck.ReplaceItem(Item.Ricochet, Item.Invert);
+        }
+
         /// <summary>
         /// Registers a <see cref="ConnectedClient"/> object with the lobby by username. Handles assigning an existing, not in-game client, otherwise makes a new object. Call this when a client is connecting to the lobby.
         /// Callers of this should check the client doesn't already exist in the lobby first.
