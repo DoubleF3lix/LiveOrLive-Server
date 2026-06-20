@@ -48,27 +48,30 @@ namespace LiveOrLiveServer {
         public int DamageForShot { get; set; } = 1;
 
         /// <summary>
-        /// A merging of <see cref="Players"/> and <see cref="Spectators"/>.
+        /// A merging of <see cref="Players"/> and <see cref="Spectators"/>
         /// </summary>
         public List<ConnectedClient> Clients => [.. Players.Cast<ConnectedClient>().Union(Spectators)];
 
         /// <summary>
-        /// The turn order for this lobby.
+        /// The turn order for this lobby
         /// </summary>
         public List<string> TurnOrder => _turnOrderManager.TurnOrder;
         /// <summary>
         /// Wrapper around <c>TryGetPlayerForCurrentTurn(out var player).Username</c>. Used for clients so we don't have to resend the entire player object. This can be <c>null</c> if the game hasn't been started yet, as the turn order is not initialized until game start.
         /// </summary>
         public string? CurrentTurn => _turnOrderManager.TryGetPlayerForCurrentTurn(out var player) ? player.Username : null;
-
-        /// <summary>
-        /// Gets the amount of bullets left in the deck.
-        /// </summary>
-        public int AmmoLeftInChamber => _ammoDeck.Count;
         /// <summary>
         /// Tracks whether or not sudden death is enabled
         /// </summary>
         public bool SuddenDeathActivated { get; set; } = false;
+        /// <summary>
+        /// Gets the amount of active ricochets applied to players. Always 0 if <see cref="Settings.ShowRicochetsCounter"/> is false.
+        /// </summary>
+        public int RicochetCounter => Settings.ShowRicochetsCounter ? Players.Count(p => p.IsRicochet) : 0;
+        /// <summary>
+        /// Gets the amount of bullets left in the deck.
+        /// </summary>
+        public int AmmoLeftInChamber => _ammoDeck.Count;
 
         /// <summary>
         /// Gets all chat messages for this lobby.
@@ -502,8 +505,8 @@ namespace LiveOrLiveServer {
                 GameStarted = GameStarted,
                 TurnOrder = TurnOrder,
                 CurrentTurn = CurrentTurn,
-                AmmoLeftInChamber = AmmoLeftInChamber,
-                SuddenDeathActivated = SuddenDeathActivated
+                SuddenDeathActivated = SuddenDeathActivated,
+                RicochetCounter = RicochetCounter
             };
         }
     }

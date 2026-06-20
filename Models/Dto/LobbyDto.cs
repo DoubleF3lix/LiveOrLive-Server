@@ -15,8 +15,7 @@ namespace LiveOrLiveServer.Models.Dto {
 
         public required List<string> TurnOrder { get; set; } = [];
         public required string? CurrentTurn { get; set; }
-
-        public required int AmmoLeftInChamber { get; set; }
         public required bool SuddenDeathActivated { get; set; }
+        public required int RicochetCounter { get; set; }
     }
 }

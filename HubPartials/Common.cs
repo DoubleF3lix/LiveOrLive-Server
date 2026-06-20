@@ -27,6 +27,9 @@ namespace LiveOrLiveServer.HubPartials {
         /// <param name="lobby">The lobby to start the game of.</param>
         private async Task StartGame(Lobby lobby) {
             var turnOrder = lobby.StartGame();
+            if (lobby.Players.Count(p => !p.Eliminated) <= 2) {
+                lobby.ActivateShowdown();
+            }
             await Clients.Group(lobby.Id).GameStarted(turnOrder);
             await AddGameLogMessage(lobby, $"The game has started with {lobby.Players.Count} players.");
         }
@@ -540,11 +543,9 @@ namespace LiveOrLiveServer.HubPartials {
                 await Clients.Group(lobby.Id).RicochetItemUsed(target, itemSource.Username);
             } else {
                 await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? $"stole and used a ricochet item from {itemSource.Username}" : "used a ricochet item")}.");
-                await Clients.Group(lobby.Id).RicochetItemUsed(null, itemSource.Username);
-                // TODO need to tell client to add show badge for the client that used it and to the player its on
-                // TODO verify the below works
-                var connectionIds = lobby.Players.Where(p => p.Username != targetPlayer.Username && p.Username != itemSource.Username).Select(p => p.ConnectionId).Cast<string>();
-                await Clients.AllExcept(connectionIds).RicochetItemUsed(target, itemSource.Username);
+                var clientsToGiveTargetTo = lobby.Players.Where(p => p.Username == targetPlayer.Username || p.Username == itemSource.Username).Select(p => p.ConnectionId).Cast<string>();
+                await Clients.AllExcept(clientsToGiveTargetTo).RicochetItemUsed(null, itemSource.Username);
+                await Clients.Clients(clientsToGiveTargetTo).RicochetItemUsed(target, itemSource.Username);
                 
             }
             return true;
@@ -605,7 +606,7 @@ namespace LiveOrLiveServer.HubPartials {
         /// <summary>
         /// Makes a player forfeit their turn (does no checks for turn order), making them shoot themselves exactly once.
         /// </summary>
-        /// <param name="lobby">The player of the player forfeiting their turn.</param>
+        /// <param name="lobby">The lobby of the player forfeiting their turn.</param>
         /// <param name="player">The <see cref="Player"/> forfeiting their turn.</param>
         private async Task ForfeitTurn(Lobby lobby, Player player) {
             await AddGameLogMessage(lobby, $"{player.Username} has forfeited their turn.");
@@ -613,12 +614,21 @@ namespace LiveOrLiveServer.HubPartials {
             await NewTurn(lobby);
         }
 
+        /// <summary>
+        /// Activate sudden death, which disables player revival and extra life items.
+        /// </summary>
+        /// <param name="lobby">The lobby to enable sudden death for.</param>
         private async Task ActivateSuddenDeath(Lobby lobby) {
             lobby.ActivateSuddenDeath();
             await Clients.Group(lobby.Id).SuddenDeathActivated();
             await AddGameLogMessage(lobby, "Sudden Death has been activated.");
         }
 
+        /// <summary>
+        /// Activate showdown mode, which is the mode when only 2 players are left.
+        /// Disables items that are useless with only 2 players, such a reverse turn order or ricochet.
+        /// </summary>
+        /// <param name="lobby">The lobby to activate showdown mode for.</param>
         private async Task ActivateShowdown(Lobby lobby) {
             lobby.ActivateShowdown();
             await Clients.Group(lobby.Id).ShowdownActivated();

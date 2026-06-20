@@ -42,7 +42,7 @@ namespace LiveOrLiveServer.Models {
         public bool EnableChamberCheckItem { get; set; } = true;
         public bool EnableDoubleDamageItem { get; set; } = true;
         public bool EnableSkipItem { get; set; } = true;
-        public bool EnableRicochetItem { get; set; } = false;
+        public bool EnableRicochetItem { get; set; } = true;
         // Hides items for round
         // public bool EnableTrenchcoatItem { get; set; } = false; // TODO (add functions and packets for usage)
         // Picks a random number of which decrements per action taken, gun goes off on the player who brings the count to 0
@@ -53,6 +53,8 @@ namespace LiveOrLiveServer.Models {
         // public bool EnablePocketPistolItem { get; set; } = false; // TODO implement
         // Force the next shot to do nothing
         // public bool EnableJamItem { get; set; } = false; // TODO implement
+        // Shoot a random player for a guaranteed hit, then make it their turn
+        // public bool HipFire { get; set; } = false; // TODO implement
 
         // Gameplay
         public bool AnnounceChamberCheckResults { get; set; } = true;
