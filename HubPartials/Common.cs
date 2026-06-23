@@ -534,6 +534,11 @@ namespace LiveOrLiveServer.HubPartials {
                 return false;
             }
 
+            if (targetPlayer.Lives == 0 || targetPlayer.Eliminated) {
+                await Clients.Caller.ActionFailed($"You can't protect a dead player with ricochet!");
+                return false;
+            }
+
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.Ricochet)) {
@@ -577,6 +582,11 @@ namespace LiveOrLiveServer.HubPartials {
 
             if (!lobby.TryGetPlayerByUsername(target, out var targetPlayer)) {
                 await Clients.Caller.ActionFailed($"{target} isn't a valid player!");
+                return false;
+            }
+
+            if (targetPlayer.Lives == 0 || targetPlayer.Eliminated) {
+                await Clients.Caller.ActionFailed($"You can't shoot a dead player!");
                 return false;
             }
 
