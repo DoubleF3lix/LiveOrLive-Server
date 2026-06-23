@@ -71,5 +71,6 @@ namespace LiveOrLiveServer.HubPartials
         Task DoubleDamageItemUsed(string itemSourceUsername);
         Task SkipItemUsed(string target, string itemSourceUsername);
         Task RicochetItemUsed(string? target, string itemSourceUsername);
+        Task PocketPistolItemUsed(string? target, string itemSourceUsername);
     }
 }

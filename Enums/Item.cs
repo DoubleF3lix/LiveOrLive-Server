@@ -7,12 +7,13 @@ namespace LiveOrLiveServer.Enums {
         RackChamber,
         ExtraLife,
         Pickpocket,
-        LifeGamble, // Also called Adrenaline
+        LifeGamble,
         Invert,
         ChamberCheck,
         DoubleDamage,
         Skip,
         Ricochet,
+        PocketPistol,
     }
 
     public static class ItemExtension {
@@ -28,6 +29,7 @@ namespace LiveOrLiveServer.Enums {
                 Item.DoubleDamage => "Double Damage",
                 Item.Skip => "Skip",
                 Item.Ricochet => "Ricochet",
+                Item.PocketPistol => "Pocket Pistol",
                 _ => "null"
             };
         }

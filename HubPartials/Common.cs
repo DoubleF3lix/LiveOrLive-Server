@@ -146,14 +146,14 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseReverseTurnOrderItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableReverseTurnOrderItem) {
-                await Clients.Caller.ActionFailed("Reverse Turn Order is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.ReverseTurnOrder.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.ReverseTurnOrder)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Reverse Turn Order item!" : $"{itemSource.Username} doesn't have a Reverse Turn Order item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have a {Item.ReverseTurnOrder.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have a {Item.ReverseTurnOrder.ToFriendlyString()} item!");
                 return false;
             }
 
@@ -173,14 +173,14 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseRackChamberItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableRackChamberItem) {
-                await Clients.Caller.ActionFailed("Rack Chamber is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.RackChamber.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.RackChamber)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Rack Chamber item!" : $"{itemSource.Username} doesn't have a Rack Chamber item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have a {Item.RackChamber.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have a {Item.RackChamber.ToFriendlyString()} item!");
                 return false;
             }
 
@@ -203,12 +203,12 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseExtraLifeItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
             if (!lobby.Settings.EnableExtraLifeItem) {
-                await Clients.Caller.ActionFailed("Extra Life is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.ExtraLife.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
             if (lobby.SuddenDeathActivated) {
-                await Clients.Caller.ActionFailed("Extra Life is disabled when Sudden Death is enabled!");
+                await Clients.Caller.ActionFailed($"{Item.ExtraLife.ToFriendlyString()} is disabled when Sudden Death is enabled!");
                 return false;
             }
 
@@ -230,7 +230,7 @@ namespace LiveOrLiveServer.HubPartials {
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.ExtraLife)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have an Extra Life item!" : $"{itemSource.Username} doesn't have an Extra Life item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have an {Item.ExtraLife.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have an {Item.ExtraLife.ToFriendlyString()} item!");
                 return false;
             }
 
@@ -257,7 +257,7 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UsePickpocketItemActual(Lobby lobby, Player user, string stealTarget, Item itemToSteal, string? stolenItemTarget) {
             if (!lobby.Settings.EnablePickpocketItem) {
-                await Clients.Caller.ActionFailed("Pickpocket is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.Pickpocket.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
@@ -266,14 +266,19 @@ namespace LiveOrLiveServer.HubPartials {
                 return false;
             }
 
+            if (user.Username == stealTargetPlayer.Username) {
+                await Clients.Caller.ActionFailed("You can't steal an item from yourself!");
+                return false;
+            }
+
             // Don't remove yet, in case the child item was a failure
             if (!user.Items.Contains(Item.Pickpocket)) {
-                await Clients.Caller.ActionFailed("You don't have a Pickpocket item!");
+                await Clients.Caller.ActionFailed($"You don't have a {Item.Pickpocket.ToFriendlyString()} item!");
                 return false;
             }
 
             if (itemToSteal == Item.Pickpocket) {
-                await Clients.Caller.ActionFailed("You can't steal a Pickpocket item!");
+                await Clients.Caller.ActionFailed($"You can't steal a {Item.Pickpocket.ToFriendlyString()} item!");
                 return false;
             }
 
@@ -283,7 +288,7 @@ namespace LiveOrLiveServer.HubPartials {
                 return false;
             }
 
-            if (itemToSteal == Item.ExtraLife || itemToSteal == Item.Skip || itemToSteal == Item.Ricochet) {
+            if (itemToSteal == Item.ExtraLife || itemToSteal == Item.Skip || itemToSteal == Item.Ricochet || itemToSteal == Item.PocketPistol) {
                 if (stolenItemTarget == null) {
                     await Clients.Caller.ActionFailed($"{itemToSteal.ToFriendlyString()} requires an item target!");
                     return false;
@@ -306,6 +311,7 @@ namespace LiveOrLiveServer.HubPartials {
                 Item.DoubleDamage => await UseDoubleDamageItemActual(lobby, user, stealTargetPlayer),
                 Item.Skip when stolenItemTarget != null => await UseSkipItemActual(lobby, user, stolenItemTarget, stealTargetPlayer),
                 Item.Ricochet when stolenItemTarget != null => await UseRicochetItemActual(lobby, user, stolenItemTarget, stealTargetPlayer),
+                Item.PocketPistol when stolenItemTarget != null => await UsePocketPistolItemActual(lobby, user, stolenItemTarget, stealTargetPlayer),
                 _ => throw new NotImplementedException()
             };
 
@@ -329,21 +335,21 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseLifeGambleItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableLifeGambleItem) {
-                await Clients.Caller.ActionFailed("Life Gamble is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.LifeGamble.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.LifeGamble)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Life Gamble item!" : $"{itemSource.Username} doesn't have a Life Gamble item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have a {Item.LifeGamble.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have a {Item.LifeGamble.ToFriendlyString()} item!");
                 return false;
             }
 
             var result = lobby.LifeGamble(user);
             await Clients.Group(lobby.Id).LifeGambleItemUsed(result.LifeChange, itemSource.Username);
             // Grammar is *still* important, kids
-            await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a life gamble item{(user != itemSource ? $" from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(Math.Abs(result.LifeChange) == 1 ? "life" : "lives")}.");
+            await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? "stole" : "used")} a {Item.LifeGamble.ToFriendlyString()} item{(user != itemSource ? $" from {itemSource.Username}" : "")} and {(result.LifeChange < 0 ? "lost" : "gained")} {Math.Abs(result.LifeChange)} {(Math.Abs(result.LifeChange) == 1 ? "life" : "lives")}.");
 
             if (result.Eliminated) {
                 await Clients.Group(lobby.Id).PlayerEliminated(user.Username);
@@ -367,14 +373,14 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseInvertItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableInvertItem) {
-                await Clients.Caller.ActionFailed("Invert is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.Invert.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.Invert)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have an Invert item!" : $"{itemSource.Username} doesn't have an Invert item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have an {Item.Invert.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have an {Item.Invert.ToFriendlyString()} item!");
                 return false;
             }
 
@@ -394,14 +400,14 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseChamberCheckItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableChamberCheckItem) {
-                await Clients.Caller.ActionFailed("Chamber Check is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.ChamberCheck.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.ChamberCheck)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Chamber Check item!" : $"{itemSource.Username} doesn't have a Chamber Check item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have a {Item.ChamberCheck.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have a {Item.ChamberCheck.ToFriendlyString()} item!");
                 return false;
             }
 
@@ -426,19 +432,19 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseDoubleDamageItemActual(Lobby lobby, Player user, Player? itemSource = null) {
             if (!lobby.Settings.EnableDoubleDamageItem) {
-                await Clients.Caller.ActionFailed("Double Damage is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.DoubleDamage.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
             itemSource ??= user;
 
             if (!itemSource.Items.Contains(Item.DoubleDamage)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Double Damage item!" : $"{itemSource.Username} doesn't have a Double Damage item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have a {Item.DoubleDamage.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have a {Item.DoubleDamage.ToFriendlyString()} item!");
                 return false;
             }
 
             if (!lobby.Settings.AllowDoubleDamageStacking && lobby.DamageForShot > 1) {
-                await Clients.Caller.ActionFailed("Double Damage is already activated!");
+                await Clients.Caller.ActionFailed($"{Item.DoubleDamage.ToFriendlyString()} is already activated!");
                 return false;
             }
 
@@ -460,7 +466,7 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseSkipItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
             if (!lobby.Settings.EnableSkipItem) {
-                await Clients.Caller.ActionFailed("Skip is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.Skip.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
@@ -472,7 +478,7 @@ namespace LiveOrLiveServer.HubPartials {
             itemSource ??= user;
 
             if (!itemSource.Items.Contains(Item.Skip)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Skip item!" : $"{itemSource.Username} doesn't have a Skip item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have a {Item.Skip.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have a {Item.Skip.ToFriendlyString()} item!");
                 return false;
             }
 
@@ -514,7 +520,7 @@ namespace LiveOrLiveServer.HubPartials {
         /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
         private async Task<bool> UseRicochetItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
             if (!lobby.Settings.EnableRicochetItem) {
-                await Clients.Caller.ActionFailed("Ricochet is not enabled!");
+                await Clients.Caller.ActionFailed($"{Item.Ricochet.ToFriendlyString()} is not enabled!");
                 return false;
             }
 
@@ -526,7 +532,7 @@ namespace LiveOrLiveServer.HubPartials {
             itemSource ??= user;
 
             if (!lobby.RemoveItemFromPlayer(itemSource, Item.Ricochet)) {
-                await Clients.Caller.ActionFailed(user == itemSource ? "You don't have a Ricochet item!" : $"{itemSource.Username} doesn't have a Ricochet item!");
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have a {Item.Ricochet.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have a {Item.Ricochet.ToFriendlyString()} item!");
                 return false;
             }
 
@@ -542,12 +548,52 @@ namespace LiveOrLiveServer.HubPartials {
                 await AddGameLogMessage(lobby, $"{user.Username}{(user != itemSource ? $" stole an item from {itemSource.Username} and" : "")} protected {(user == targetPlayer ? "themselves" : targetPlayer.Username)} with ricochet.");
                 await Clients.Group(lobby.Id).RicochetItemUsed(target, itemSource.Username);
             } else {
-                await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? $"stole and used a ricochet item from {itemSource.Username}" : "used a ricochet item")}.");
+                await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? $"stole and used a {Item.Ricochet.ToFriendlyString()} item from {itemSource.Username}" : $"used a {Item.Ricochet.ToFriendlyString()} item")}.");
                 var clientsToGiveTargetTo = lobby.Players.Where(p => p.Username == targetPlayer.Username || p.Username == itemSource.Username).Select(p => p.ConnectionId).Cast<string>();
                 await Clients.AllExcept(clientsToGiveTargetTo).RicochetItemUsed(null, itemSource.Username);
                 await Clients.Clients(clientsToGiveTargetTo).RicochetItemUsed(target, itemSource.Username);
-                
             }
+            return true;
+        }
+
+        /// <summary>
+        /// Uses a pocket pistol item for the specified player.
+        /// </summary>
+        /// <param name="lobby">The lobby the player belongs to.</param>
+        /// <param name="user">The player using the item.</param>
+        /// <param name="target">The username of the player getting the extra life.</param>
+        /// <param name="itemSource">The player we should take the item from. Set to <c>player</c> if <c>null</c>.</param>
+        /// <returns><c>true</c> if the item usage was a success, <c>false</c> if some precondition failed.</returns>
+        private async Task<bool> UsePocketPistolItemActual(Lobby lobby, Player user, string target, Player? itemSource = null) {
+            if (!lobby.Settings.EnablePocketPistolItem) {
+                await Clients.Caller.ActionFailed($"{Item.PocketPistol.ToFriendlyString()} is not enabled!");
+                return false;
+            }
+
+            if (!lobby.TryGetPlayerByUsername(target, out var targetPlayer)) {
+                await Clients.Caller.ActionFailed($"{target} isn't a valid player!");
+                return false;
+            }
+
+            if (user.Username == targetPlayer.Username) {
+                await Clients.Caller.ActionFailed($"You can't use {Item.PocketPistol.ToFriendlyString()} on yourself!");
+                return false;
+            }
+
+            itemSource ??= user;
+
+            if (!lobby.RemoveItemFromPlayer(itemSource, Item.PocketPistol)) {
+                await Clients.Caller.ActionFailed(user == itemSource ? $"You don't have a {Item.PocketPistol.ToFriendlyString()} item!" : $"{itemSource.Username} doesn't have a {Item.PocketPistol.ToFriendlyString()} item!");
+                return false;
+            }
+
+            var backfired = Random.Shared.NextDouble() >= 0.80;
+            if (backfired) targetPlayer = user;
+
+            await AddGameLogMessage(lobby, $"{user.Username} {(user != itemSource ? $"stole and used a {Item.PocketPistol.ToFriendlyString()} item from {itemSource.Username}" : $"used a {Item.PocketPistol.ToFriendlyString()} item")}.");
+            await ShootPlayerActual(lobby, user, targetPlayer, true);
+            await Clients.Group(lobby.Id).PocketPistolItemUsed(target, itemSource.Username);
+
             return true;
         }
 
@@ -557,8 +603,9 @@ namespace LiveOrLiveServer.HubPartials {
         /// <param name="lobby">The lobby the players belong to.</param>
         /// <param name="shooter">The <see cref="Player"/> doing the shooting.</param>
         /// <param name="target">The <see cref="Player"/> who was shot. May be the same as <paramref name="shooter"/>.</param>
-        private async Task ShootPlayerActual(Lobby lobby, Player shooter, Player target) {
-            var result = lobby.ShootPlayer(shooter, target);
+        /// <param name="pocketPistol">Whether or not this shot came from a pocket pistol, and is a guaranteed hit.</param>
+        private async Task ShootPlayerActual(Lobby lobby, Player shooter, Player target, bool pocketPistol = false) {
+            var result = lobby.ShootPlayer(shooter, target, pocketPistol);
 
             // Be verbose about who shot who (even if it's themselves)
             await Clients.Group(lobby.Id).PlayerShotAt(result.PlayerShot.Username, result.BulletFired, result.Damage, [.. result.Ricochets.Select(r => r.Username)]);
@@ -599,7 +646,7 @@ namespace LiveOrLiveServer.HubPartials {
                 if (secondWindKill) {
                     await AddGameLogMessage(lobby, $"{shooter.Username} has a Second Wind!");
                 }
-                await OnActionEnd(lobby, !shotSelfWithBlank && !secondWindKill);
+                await OnActionEnd(lobby, !pocketPistol && !shotSelfWithBlank && !secondWindKill);
             }
         }
 

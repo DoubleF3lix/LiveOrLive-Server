@@ -242,10 +242,11 @@ namespace LiveOrLiveServer {
         /// </summary>
         /// <param name="shooter">The player who fired the shot</param>
         /// <param name="target">The player who was shot at. Can be the same as <c>shooter</c>.</param>
+        /// <param name="pocketPistol">Whether or not this shot came from a pocket pistol, and is a guaranteed hit.</param>
         /// <returns>The data about the shot, including what type, the damage, and whether or not they shot themselves. Doesn't include <c>shooter</c> or <c>target</c> as these are assumed to be owned by the caller. See <see cref="ShootPlayerResult"/>.</returns>
-        public ShootPlayerResult ShootPlayer(Player shooter, Player target) {
-            var bulletType = _ammoDeck.Pop();
-            var damage = (int)bulletType * DamageForShot;
+        public ShootPlayerResult ShootPlayer(Player shooter, Player target, bool pocketPistol = false) {
+            var bulletType = pocketPistol ? BulletType.Live : _ammoDeck.Pop();
+            var damage = pocketPistol ? 1 : (int)bulletType * DamageForShot;
 
             List<Player> ricochets = [];
             while (target.IsRicochet) {
@@ -256,7 +257,8 @@ namespace LiveOrLiveServer {
 
             AddLives(target, -damage);
             // Always reset anyways, no point in checking
-            DamageForShot = 1;
+            if (!pocketPistol)
+                DamageForShot = 1;
 
             return new ShootPlayerResult {
                 BulletFired = bulletType,

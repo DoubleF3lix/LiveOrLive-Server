@@ -11,9 +11,9 @@ namespace LiveOrLiveServer {
         private int _currentTurnIndex = -1;
 
         /// <summary>
-        /// Gets the turn order by usernames. Used for display and doesn't change after initialization.
+        /// Gets the turn order by usernames. Used for display and only changes as players are eliminated.
         /// </summary>
-        public List<string> TurnOrder => _players.Select(p => p.Username).ToList();
+        public List<string> TurnOrder => [.. _players.Where(p => !p.Eliminated).Select(p => p.Username)];
 
         /// <summary>
         /// Advances the turn by one, skipping spectators and dead players, looping around as necessary. Does not skip skipped players, since that should be handled by the lobby itself.

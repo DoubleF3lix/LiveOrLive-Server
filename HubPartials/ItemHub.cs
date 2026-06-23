@@ -124,5 +124,17 @@ namespace LiveOrLiveServer.HubPartials
 
             await UseRicochetItemActual(lobby, player, target);
         }
+
+        public async Task UsePocketPistolItem(string target) {
+            var lobby = Context.GetLobby(_server);
+            var player = Context.GetPlayer(_server);
+
+            if (lobby.CurrentTurn != player.Username) {
+                await Clients.Caller.ActionFailed("It must be your turn to use an item!");
+                return;
+            }
+
+            await UsePocketPistolItemActual(lobby, player, target);
+        }
     }
 }

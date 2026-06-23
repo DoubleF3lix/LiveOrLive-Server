@@ -45,5 +45,6 @@ namespace LiveOrLiveServer.HubPartials
         Task UseDoubleDamageItem();
         Task UseSkipItem(string target);
         Task UseRicochetItem(string target);
+        Task UsePocketPistolItem(string target);
     }
 }

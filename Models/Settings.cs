@@ -44,17 +44,19 @@ namespace LiveOrLiveServer.Models {
         public bool EnableSkipItem { get; set; } = true;
         public bool EnableRicochetItem { get; set; } = true;
         // Hides items for round
+        // If you pickpocket a player with trenchcoat and get an item that needs to be used, it asks you to pick a player,
+        // but won't tell you what it's for. Could be Extra Life, or Pocket Pistol
         // public bool EnableTrenchcoatItem { get; set; } = false; // TODO (add functions and packets for usage)
         // Picks a random number of which decrements per action taken, gun goes off on the player who brings the count to 0
         // public bool EnableMisfireItem { get; set; } = false; // TODO implement
         // Force a player to take an action when their turn arrives
         // public bool EnableHypnotizeItem { get; set; } = false; // TODO implement
         // 80% chance to shoot target, 20% chance to shoot self
-        // public bool EnablePocketPistolItem { get; set; } = false; // TODO implement
+        public bool EnablePocketPistolItem { get; set; } = true;
         // Force the next shot to do nothing
         // public bool EnableJamItem { get; set; } = false; // TODO implement
         // Shoot a random player for a guaranteed hit, then make it their turn
-        // public bool HipFire { get; set; } = false; // TODO implement
+        // public bool EnableHipFire { get; set; } = false; // TODO implement
 
         // Gameplay
         public bool AnnounceChamberCheckResults { get; set; } = true;
@@ -74,12 +76,9 @@ namespace LiveOrLiveServer.Models {
         // Whether the ricochet badge should be shown on player cards
         public bool ShowRicochets { get; set; } = false;
         // Whether or not a counter should be displayed for how many ricochets are active (essentially useless if the above is true)
-        public bool ShowRicochetsCounter { get; set; } = true; // TODO
+        public bool ShowRicochetsCounter { get; set; } = true;
         // Whether or not a skip is discarded from all players at the end of a round
         public bool LoseSkipAfterRound { get; set; } = true;
-        // Whether ricochet should take skip status into account when shooting the next player in the turn order
-        // When true, shoots next player who can actually go in the turn order, otherwise always shoots the next non-dead player
-        public bool RicochetIgnoreSkippedPlayers { get; set; } = true; // TODO does this suck?
         // What percentage of players have to be left for sudden death to activate
         // Sudden death disables revival, and turns all Extra Life items into Double Damage
         public int SuddenDeathActivationPoint { get; set; } = 90;
@@ -125,6 +124,14 @@ namespace LiveOrLiveServer.Models {
             if (MaxPlayerRevives < 0) {
                 MaxPlayerRevives = int.MaxValue;
             }
+
+            if (!EnableRicochetItem) {
+                ShowRicochetsCounter = false;
+                ShowRicochets = false;
+            }
+            if (ShowRicochets) {
+                ShowRicochetsCounter = false;
+            }
         }
 
         public IEnumerable<Item> GetEnabledItems() {
@@ -138,6 +145,7 @@ namespace LiveOrLiveServer.Models {
             if (EnableDoubleDamageItem) yield return Item.DoubleDamage;
             if (EnableSkipItem) yield return Item.Skip;
             if (EnableRicochetItem) yield return Item.Ricochet;
+            if (EnablePocketPistolItem) yield return Item.PocketPistol;
         }
     }
 }

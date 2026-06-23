@@ -38,7 +38,7 @@ namespace LiveOrLiveServer.HubPartials {
                 return;
             }
 
-            if (targetPlayer.Lives == 0) {
+            if (targetPlayer.Lives == 0 || targetPlayer.Eliminated) {
                 await Clients.Caller.ActionFailed("You can't shoot a dead player!");
                 return;
             }
