@@ -475,6 +475,11 @@ namespace LiveOrLiveServer.HubPartials {
                 return false;
             }
 
+            if (targetPlayer.Lives == 0 || targetPlayer.Eliminated) {
+                await Clients.Caller.ActionFailed($"You can't skip a dead player!");
+                return false;
+            }
+
             itemSource ??= user;
 
             if (!itemSource.Items.Contains(Item.Skip)) {

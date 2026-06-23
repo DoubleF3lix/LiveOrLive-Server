@@ -7,7 +7,7 @@ namespace LiveOrLiveServer {
     /// </summary>
     /// <param name="players">The list of players for the lobby. Spectators are automatically filtered out and can be safely included.</param>
     public class TurnOrderManager(List<Player> players) {
-        private readonly List<Player> _players = players;
+        private readonly List<Player> _players = [.. players]; // Copy because otherwise reversing reverses the list in the lobby too
         private int _currentTurnIndex = -1;
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace LiveOrLiveServer {
             do {
                 _currentTurnIndex = (_currentTurnIndex + 1) % _players.Count;
                 currentPlayerForTurn = _players[_currentTurnIndex];
-            } while (currentPlayerForTurn.Lives <= 0);
+            } while (currentPlayerForTurn.Lives <= 0 || currentPlayerForTurn.Eliminated);
         }
 
         /// <summary>
