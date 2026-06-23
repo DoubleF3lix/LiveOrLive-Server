@@ -359,7 +359,7 @@ namespace LiveOrLiveServer.HubPartials {
             }
 
             // Need to check if we eliminated ourselves (whoops!)
-            await OnActionEnd(lobby, false);
+            await OnActionEnd(lobby, result.Dead || result.Eliminated);
 
             return true;
         }

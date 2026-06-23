@@ -64,7 +64,7 @@ namespace LiveOrLiveServer.Models {
         public bool AllowLifeDonation { get; set; } = true;
         // Allows players to come back. If false, once a player hits 0 lives, they're out for good
         // -1 is infinite, 0 to disable
-        public int MaxPlayerRevives { get; set; } = -1;
+        public int MaxPlayerRevives { get; set; } = 8;
         // Stacking is linear, not multiplicative, so 2 2x items is 3 damage, not 4
         public bool AllowDoubleDamageStacking { get; set; } = false;
         // If false, players are immune to skips if they lost their last turn
@@ -121,8 +121,8 @@ namespace LiveOrLiveServer.Models {
                 MinItemsPerRound = MaxItemsPerRound;
             }
 
-            if (MaxPlayerRevives < 0) {
-                MaxPlayerRevives = int.MaxValue;
+            if (!AllowLifeDonation || MaxPlayerRevives < 0) {
+                MaxPlayerRevives = 0;
             }
 
             if (!EnableRicochetItem) {
